@@ -1,7 +1,9 @@
+<p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.png">
   <img alt="Zirah, Post-Quantum File Signer" src="docs/assets/banner-light.png" width="560">
 </picture>
+</p>
 
 Zirah is a post-quantum hardware signer built around an STM32F407, either the DevEBox STM32F4XX_M core board measured in the technical report or the STM32F4DISCOVERY it was first written for. It began as a home-built avalanche-noise random number generator, a reverse-biased 2N3904 sampled by the STM32 and checked with SP 800-90B health tests, and that noise source still supplies every random bit the device uses. Around it the board makes a post-quantum ML-DSA-65 signature (FIPS 204) with first-order masking of the secret-key multiplications and adds a classical ECDSA P-256 signature from an ATECC608 secure element whose key never leaves that chip. A Windows desktop app and a command-line tool are the device's interface: they hash the file, send the board a digest to sign, show its live noise and every signing stage as the board reports it, and check both signatures before saving anything.
 
