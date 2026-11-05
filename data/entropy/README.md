@@ -39,4 +39,4 @@ The line `min(H_original, 8 X H_bitstring)` in the first result is the assessed 
 
 ## Results From the DevEBox Board
 
-The 1,000,000 samples measured for the technical report (5 November 2026, 20 pieces of 50,000) gave 6.898 bits per 8-bit symbol on the non-IID track (H_original 7.059, H_bitstring 0.862) and 0.784 bits for bit 0. The IID permutation tests failed 3 of 19, so the non-IID result is the one that applies. The tool outputs are in `data/entropy/results/`, the board's validation report is in `docs/results/`, and the raw captures are in the Zenodo archive of this release.
+The 1,000,000 samples measured for the technical report (5 November 2026, 20 pieces of 50,000) gave 6.898 bits per 8-bit symbol on the non-IID track (H_original 7.059, H_bitstring 0.862) and 0.784 bits for bit 0. The IID permutation tests failed 3 of 19, so the non-IID result is the one that applies. The tool outputs are in `data/entropy/results/`, the board's validation report is in `docs/results/`, and the raw captures are in the Zenodo archive of this release, https://doi.org/10.5281/zenodo.23982873.

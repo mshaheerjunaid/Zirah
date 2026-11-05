@@ -1,6 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite it as below."
-title: "Zirah: A Post-Quantum Hardware Signer with an Avalanche Noise True Random Number Generator"
+title: "Zirah: A Post-Quantum True Random Number Generator Hardware Signer With an Avalanche Noise"
+doi: "10.5281/zenodo.23982873"
+repository-code: "https://github.com/mshaheerjunaid/Zirah"
 type: software
 authors:
   - family-names: "Junaid"

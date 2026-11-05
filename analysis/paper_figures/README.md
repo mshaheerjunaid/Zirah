@@ -9,6 +9,6 @@ These scripts redraw the drawn figures of the Zirah technical report at their pr
 | `../../hardware/layout/devebox/schematic_board_b.py file.svg` | Figure 4, Board B (needs schemdraw) |
 | `../../hardware/layout/devebox/schematic_board_a.py file.svg` | Figure 6, Board A as built (needs schemdraw) |
 | `export_breadboard_svg.py` | Figure 7, Board A on the breadboard, from `hardware/layout` |
-| `entropy_figures.py path/to/sourceA_1M_raw16.bin [folder]` | Figures 9, 10 and 11, from the capture in the Zenodo dataset |
+| `entropy_figures.py path/to/sourceA_1M_raw16.bin [folder]` | Figures 9, 10 and 11, from the capture in the Zenodo dataset (https://doi.org/10.5281/zenodo.23982873) |
 
 Figures 2, 5, 8, 12 and 13 are photographs, screenshots and the ELMO leakage plot, kept at the resolution they were taken or made at.

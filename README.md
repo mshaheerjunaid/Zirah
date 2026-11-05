@@ -125,7 +125,7 @@ This is a research prototype, not a certified product. Only the secret-key multi
 
 ## Citing Zirah
 
-`CITATION.cff` holds the citation for this release. A technical report on the DevEBox build and its measurements, "Zirah: A Post-Quantum Hardware Signer with an Avalanche Noise True Random Number Generator", is being submitted to arXiv, and the raw captures and NIST outputs behind it are archived on Zenodo with this release.
+`CITATION.cff` holds the citation for this release. Release 1.0.0 is archived on Zenodo together with the raw captures and NIST outputs behind the measurements, at https://doi.org/10.5281/zenodo.23982873. A technical report on the DevEBox build and its measurements, "Zirah: A Post-Quantum True Random Number Generator Hardware Signer With an Avalanche Noise", is being submitted to arXiv.
 
 ## Licence
 
