@@ -1,0 +1,106 @@
+/* Layout: the board drawing stays in view on the left while the current step and the list sit on the right;
+   on a phone the step comes first, then the drawing, then the list. */
+:root {
+  --paper: #f4f6f2;
+  --ink: #17201b;
+  --muted: #56615a;
+  --rule: #d3d8cf;
+  --card: #ffffff;
+  --hl: #c2187a;
+  --hl-soft: #f8d5e8;
+  --go: #1f6b46;
+  --go-ink: #ffffff;
+  /* The drawing shows a real white breadboard, so it keeps these colours in both themes. */
+  --bb: #f1f0e8; --bb-edge: #c6c3b5; --groove: #e1ded2; --holec: #b3b0a4; --bb-ink: #6a675c;
+  --sp: #f7dede; --sm: #dce5f4; --spt: #c62828; --smt: #1f4f99;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111614; --ink: #e7ece8; --muted: #a2aca5; --rule: #2b342f; --card: #19201c;
+    --hl: #f05aa3; --hl-soft: #4b1c34; --go: #3fae74; --go-ink: #07140d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111614; --ink: #e7ece8; --muted: #a2aca5; --rule: #2b342f; --card: #19201c;
+  --hl: #f05aa3; --hl-soft: #4b1c34; --go: #3fae74; --go-ink: #07140d; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.5; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top .wrap { padding-block: 22px 14px; }
+h1 { font-size: 1.7rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 14px; max-width: 62ch; }
+.bar { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--go); transition: width .25s; }
+.bench { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "now" "drawing" "list"; padding-block: 8px 48px; }
+.now { grid-area: now; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px; min-width: 0; }
+.drawing { grid-area: drawing; min-width: 0; overflow-x: auto; }
+@media (max-width: 899px) { #board { min-width: 560px; } }
+.list { grid-area: list; min-width: 0; }
+@media (min-width: 900px) {
+  .bench { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: "drawing now" "drawing list"; align-items: start; }
+  .drawing { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  #board { max-height: calc(100vh - 28px); }
+}
+.where { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 6px; color: var(--muted); font-size: .92rem; }
+#stage { border: 1px solid var(--rule); border-radius: 999px; padding: 1px 10px; }
+h2 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 8px; text-wrap: balance; }
+.note { color: var(--muted); font-size: .95rem; margin: 0 0 10px; }
+.body p, .body ul { margin: 0 0 10px; }
+.body ul { padding-left: 1.2em; }
+.body li { margin-bottom: 4px; }
+.kit { columns: 2; column-gap: 24px; }
+@media (max-width: 520px) { .kit { columns: 1; } }
+b.hl { background: var(--hl-soft); padding: 0 .3em; border-radius: 4px; white-space: nowrap; }
+pre { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 0 0 10px; }
+code { font-family: var(--mono); font-size: .95rem; }
+.nav { display: flex; gap: 12px; margin-top: 14px; }
+.nav button { flex: 1; min-height: 50px; font: 700 1.05rem var(--font); border-radius: 10px; cursor: pointer;
+  border: 2px solid var(--rule); background: transparent; color: var(--ink); }
+.nav button.go { background: var(--go); border-color: var(--go); color: var(--go-ink); }
+.nav button:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+#board { width: 100%; height: auto; display: block; }
+.grp h3 { font-size: .95rem; margin: 14px 0 4px; color: var(--muted); }
+.grp ol { list-style: none; margin: 0; padding: 0; }
+.grp button { width: 100%; display: flex; gap: 10px; text-align: left; background: none; border: 0; border-radius: 8px;
+  padding: 6px 8px; font: inherit; font-size: .95rem; color: var(--ink); cursor: pointer; }
+.grp button:hover { background: var(--card); }
+.grp .n { min-width: 2.2em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.grp button.done .n::after { content: " \2713"; color: var(--go); }
+.grp button.cur { background: var(--hl-soft); font-weight: 700; }
+/* drawing */
+.bb { fill: var(--bb); stroke: var(--bb-edge); }
+.groove { fill: var(--groove); }
+.sp { fill: var(--sp); } .sm { fill: var(--sm); }
+text.spt { fill: var(--spt); } text.smt { fill: var(--smt); }
+.hole { fill: var(--holec); }
+.num, .lab { font: 700 9px var(--font); fill: var(--bb-ink); text-anchor: middle; }
+.lab.spt, .lab.smt { font-size: 13px; }
+.ring { fill: none; stroke: var(--hl); stroke-width: 2.6; display: none; }
+.part.now .ring { display: inline; animation: pulse 1.3s ease-in-out infinite; }
+@keyframes pulse { 50% { stroke-opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .part.now .ring { animation: none; } .bar span { transition: none; } }
+.part.later { display: none; }
+.part.placed { opacity: .8; }
+.leg { fill: #3a3a3a; } .legl { fill: #dcdcdc; } .end { fill: #222; }
+.wireleg { stroke: #8c8c8c; stroke-width: 2; fill: none; }
+.rbody { fill: #e2c890; stroke: #96773e; }
+.cbody { fill: #df8a3d; stroke: #8b4c16; }
+.ctext { font: 700 6.5px var(--font); fill: #2a1606; text-anchor: middle; }
+.ebody { fill: #1f3d73; stroke: #0d2047; } .stripe { fill: #c8d2e5; }
+.pm { font: 700 12px var(--font); fill: var(--spt); }
+.tbody { fill: #2b2b2b; } .tleg { font: 700 8px var(--font); fill: #ffffff; }
+.chip { fill: #242424; } .notch { fill: var(--groove); }
+.pin { font: 700 8px var(--font); fill: #ffffff; text-anchor: middle; }
+.chipt { font: 700 10px var(--font); fill: #ffffff; text-anchor: middle; }
+.w { fill: none; stroke-width: 5; stroke-linecap: round; }
+.wo { fill: none; stroke: rgba(0, 0, 0, .35); stroke-width: 7; stroke-linecap: round; }
+.flag { fill: #ffffff; stroke: var(--bb-edge); }
+.flagt { font: 700 9.5px var(--font); fill: #262626; text-anchor: middle; }
+.tag { font: 700 9px var(--font); fill: #3b392f; } .tag.tend { text-anchor: end; }
+.probe { stroke: #ffffff; stroke-width: 2.5; }
+.probet { font: 700 9px var(--font); fill: #262626; }

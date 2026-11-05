@@ -1,0 +1,823 @@
+{
+  "app": {
+    "tagline": "Post-Quantum File Signer",
+    "version": "Version {version}",
+    "error_title": "Something Went Wrong in the Window",
+    "error_detail": "The Details Are in last-error.txt in the Zirah Data Folder",
+    "quit_busy_title": "An Operation Is Still Running",
+    "quit_busy_text": "Quitting Now Cancels the Operation and Saves Nothing. Quit Anyway?"
+  },
+  "conn": {
+    "DISCONNECTED": {
+      "label": "Disconnected",
+      "detail": "Plug in the Zirah or Turn on Simulation"
+    },
+    "SEARCHING": {
+      "label": "Searching",
+      "detail": "Looking for the Zirah USB Port"
+    },
+    "CONNECTING": {
+      "label": "Connecting",
+      "detail": "Opening {port}"
+    },
+    "HANDSHAKE": {
+      "label": "Handshake",
+      "detail": "Checking the Firmware"
+    },
+    "SELF_CHECK": {
+      "label": "Checking",
+      "detail": "Reading Keys and Health"
+    },
+    "READY": {
+      "label": "Ready",
+      "detail": "Every Hardware Check Passed"
+    },
+    "DEGRADED": {
+      "label": "Ready with Warnings",
+      "detail": "{warning}"
+    },
+    "NEEDS_TRUST": {
+      "label": "Trust Required",
+      "detail": "Compare the Fingerprints, Then Trust This Device"
+    },
+    "SIMULATED": {
+      "label": "Simulation",
+      "detail": "Every Result Is Marked Simulated"
+    },
+    "BUSY": {
+      "label": "Busy",
+      "detail": "{job}"
+    },
+    "ERROR": {
+      "label": "Not Ready",
+      "detail": "{problem}"
+    }
+  },
+  "jobs": {
+    "sign": "Signing a File",
+    "selfcheck": "Running the Self-Check",
+    "health": "Testing the Entropy Source",
+    "keygen": "Generating a Key",
+    "confirm": "Changing Button Confirmation",
+    "prepare": "Hashing the File",
+    "verify": "Verifying a Signature",
+    "bench": "Running the Benchmark"
+  },
+  "checks": {
+    "hardware": {
+      "ok": "Real Zirah Hardware",
+      "fail": "Simulation Mode, No Hardware"
+    },
+    "protocol": {
+      "ok": "Firmware Compatible",
+      "fail": "Firmware Not Compatible"
+    },
+    "kat": {
+      "ok": "Boot Self-Test Passed",
+      "fail": "Boot Self-Test Failed"
+    },
+    "trng": {
+      "ok": "Entropy Source Healthy",
+      "fail": "Entropy Source Not Healthy"
+    },
+    "key": {
+      "ok": "Signing Key Loaded",
+      "fail": "No Signing Key"
+    },
+    "signing": {
+      "ok": "Signing Unlocked",
+      "fail": "Signing Locked"
+    },
+    "trusted": {
+      "ok": "Keys Trusted on This PC",
+      "fail": "Keys Not Trusted Yet"
+    },
+    "oled": {
+      "ok": "OLED Present",
+      "fail": "OLED Missing"
+    },
+    "confirm": {
+      "ok": "Button Confirmation On",
+      "fail": "Button Confirmation Off"
+    },
+    "atecc": {
+      "ok": "ATECC608 Ready",
+      "fail": "ATECC608 Not Ready"
+    },
+    "hardening": {
+      "ok": "Firmware Hardening Active",
+      "fail": "Firmware Hardening Off"
+    },
+    "rdp": {
+      "ok": "Readout Protection On",
+      "fail": "Readout Protection Off"
+    },
+    "fwmatch": {
+      "ok": "Firmware Matches This PC",
+      "fail": "Firmware Differs from This PC"
+    },
+    "mcurng": {
+      "ok": "STM32 Generator Healthy",
+      "fail": "STM32 Generator Failed"
+    },
+    "jitter": {
+      "ok": "Clock Jitter Healthy",
+      "fail": "Clock Jitter Failed"
+    },
+    "accel": {
+      "ok": "Board Accelerometer Healthy",
+      "fail": "Board Accelerometer Failed"
+    }
+  },
+  "stages": {
+    "CONFIRM": {
+      "short": "Confirm",
+      "long": "Waiting for the Button Press"
+    },
+    "ENTROPY": {
+      "short": "Entropy",
+      "long": "Fresh SP 800-90B Health Test"
+    },
+    "REFRESH": {
+      "short": "Masks",
+      "long": "Refreshing the Key Shares"
+    },
+    "SIGN": {
+      "short": "ML-DSA",
+      "long": "Masked ML-DSA-65 Signature"
+    },
+    "VERIFY": {
+      "short": "Verify",
+      "long": "Device Checks Its Own Signature"
+    },
+    "ECDSA": {
+      "short": "ECDSA",
+      "long": "ATECC608 P-256 Signature"
+    },
+    "PC_VERIFY": {
+      "short": "PC Check",
+      "long": "This PC Verifies Both Halves"
+    },
+    "SAVE": {
+      "short": "Saved",
+      "long": "Signature File Written"
+    },
+    "HASH": {
+      "short": "Hash",
+      "long": "Hashing the File"
+    },
+    "HEALTH": {
+      "short": "Health",
+      "long": "Fresh SP 800-90B Health Test"
+    }
+  },
+  "rail": {
+    "device": "On the Device",
+    "pc": "On This PC",
+    "cancel": "Cancel",
+    "cancel_late": "Signing Has Started and Will Finish",
+    "press_sim": "Press the Simulated USER Button",
+    "confirm_prompt": "Check That the OLED Shows {short}, Then Press {btn}",
+    "confirm_sub": "Nothing Is Signed Until You Press {btn}, and Cancel Works Until Then",
+    "confirm_sub_sim": "Simulation Has No Button, so Use the Simulated One Below"
+  },
+  "scope": {
+    "title": "Avalanche Noise",
+    "subtitle": "Raw ADC Samples from {pin}, the Same Block the OLED Draws",
+    "subtitle_nopin": "Raw ADC Samples, the Same Block the OLED Draws",
+    "live": "Live",
+    "simulated": "Simulated Samples",
+    "no_signal": "No Signal",
+    "waiting": "Waiting for the First Block",
+    "disconnected": "No Device Connected",
+    "fault": "Entropy Source Reports {state}",
+    "watermark": "SIMULATED",
+    "std": "Std Dev",
+    "mean": "Mean",
+    "clipped": "Clipped",
+    "block": "Block",
+    "rate": "Sample Rate",
+    "lsb": "LSB",
+    "khz": "{value} kHz",
+    "histogram": "Distribution",
+    "range": "Range",
+    "source_b": "Source B Live, Correlation {r}"
+  },
+  "spine": {
+    "port": "Port",
+    "firmware": "Firmware",
+    "device": "Device ID",
+    "pq": "PQ Key",
+    "ec": "EC Key",
+    "trust": "Trust",
+    "none": "None",
+    "unknown": "Unknown",
+    "trusted": "Trusted",
+    "unpinned": "Not Trusted Yet",
+    "changed": "Key Changed",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "trust_device": "Trust This Device",
+    "auto_connect": "Auto-Connect",
+    "simulation": "Simulation Mode",
+    "reduce_motion": "Reduce Motion",
+    "keep_history": "Keep History",
+    "diagnostics": "Diagnostics",
+    "sim_ribbon": "Simulation Mode: Nothing Here Comes from Zirah Hardware",
+    "readiness": "Readiness",
+    "stop_search": "Stop Searching"
+  },
+  "tabs": {
+    "sign": "Sign",
+    "verify": "Verify",
+    "device": "Device",
+    "history": "History"
+  },
+  "sign": {
+    "drop_title": "Drop a File to Sign",
+    "drop_sub": "Or Choose One from Your PC",
+    "choose": "Choose File",
+    "hashing": "Hashing {name}",
+    "file": "File",
+    "size": "Size",
+    "sha256": "SHA-256",
+    "oled_digest": "Digest on the OLED",
+    "oled_hint": "Zirah Signs the File's Digest Together with Its Name, Size and Times, so These Eight Digits Appear When You Sign",
+    "oled_pending": "···· ····",
+    "saves_as": "Signature Saved As",
+    "saves_as_copy": "Signed Copy Saved As",
+    "original_kept": "{name} Stays Exactly as Before, and the Signature Is a Separate File Beside It",
+    "original_kept_copy": "{name} Stays Exactly as Before, and the Signed Copy Carries the Signature Inside It",
+    "already_signed": "This File Already Carries a Zirah Signature, so Verify it, or Sign the Original",
+    "in_folder": "In {folder}",
+    "choose_dest": "Choose a Destination",
+    "change_dest": "Change",
+    "button": "Sign with Zirah",
+    "button_sim": "Sign in Simulation",
+    "another": "Choose Another File",
+    "not_ready": "Signing Needs a Ready Device: {reason}",
+    "signed": "Signed",
+    "signed_sim": "Signed in Simulation",
+    "signed_detail": "Both Halves Verified on This PC Before Saving",
+    "signed_pq": "ML-DSA-65 Verified on This PC Before Saving, No ECDSA Half",
+    "sim_warning": "This File Is Marked Simulated and Never Verifies as a Hardware Signature",
+    "show": "Show in Folder",
+    "verify_now": "Verify Now",
+    "sign_another": "Sign Another File",
+    "try_again": "Try Again",
+    "timings": "Device Timings",
+    "t_health": "Health Test",
+    "t_masks": "Masks and Rnd",
+    "t_mldsa": "ML-DSA-65",
+    "t_verify": "Self-Check",
+    "t_ecdsa": "ECDSA",
+    "t_attempts": "Attempts",
+    "t_ecc_rng": "ATECC608 Random Mixed In",
+    "t_none": "Not Measured in Simulation",
+    "ms": "{value} ms"
+  },
+  "verify": {
+    "file": "File",
+    "signature": "Signature File",
+    "keys": "Signer's Public Keys",
+    "choose_doc": "Choose File",
+    "choose_sig": "Choose Signature",
+    "choose_keys": "Use a Key File",
+    "drop_doc": "Drop the Signed File",
+    "drop_sig": "Drop the Signature File",
+    "drop_keys": "Drop the Signer's Key File",
+    "keys_optional": "Optional, Otherwise the Keys Trusted on This PC",
+    "keys_detail": "Used Instead of the Keys Trusted on This PC",
+    "drop_all": "Drop All Three Files at Once, Anywhere on This Page, and Zirah Puts Each in Its Place. Verifying Needs No Board.",
+    "found_sig": "Found Next to the File",
+    "inside": "Inside the File",
+    "inside_detail": "A Signed Copy, {kind}",
+    "button": "Verify Signature",
+    "verifying": "Verifying",
+    "device": "Signing Device",
+    "covers": "The Signatures Cover the File's Content, Name, Size and the Times Marked Signed",
+    "fp_title": "Signer Fingerprints",
+    "fp_pq": "PQ, ML-DSA-65",
+    "fp_ec": "EC, ECDSA P-256",
+    "fp_none": "None",
+    "fp_hint": "Compare These with the Fingerprints the Signer Published, on Their Website or Profile. If They Match, the Key Is Theirs.",
+    "fp_match": "These Keys Match {who} in the Trusted Keys",
+    "signed_digest": "Signed File Digest",
+    "file_digest": "This File's Digest",
+    "digest_differs": "Differs",
+    "times_title": "When",
+    "t_signed": "Signed At",
+    "t_created_then": "Created, When Signed",
+    "t_modified_then": "Modified, When Signed",
+    "t_created_now": "Created, on This PC",
+    "t_modified_now": "Modified, on This PC",
+    "t_verified": "Verified At",
+    "t_none": "Not Reported",
+    "note_signed": "Signed, as the Signing PC Reported It",
+    "note_claimed": "Claimed by the Signing PC, Not Signed",
+    "note_unverified": "In the Signed Data, but the Signature Did Not Verify",
+    "note_v1": "Not Recorded by This Older Signature",
+    "note_fs": "This PC's File System, Not Signed",
+    "note_now": "This PC's Clock",
+    "changed_after": "This PC's File System Dates the Last Change After the Signing Time",
+    "kinds": {
+      "pdf": "PDF",
+      "ooxml": "Office File",
+      "zip": "ZIP Archive",
+      "png": "PNG Image",
+      "jpeg": "JPEG Image"
+    },
+    "reset": "Start Over",
+    "verdicts": {
+      "VALID": {
+        "title": "Valid Hybrid Signature",
+        "detail": "Both Halves Verified Against the Trusted Keys"
+      },
+      "VALID_PQ_ONLY": {
+        "title": "Valid Post-Quantum Signature",
+        "detail": "ML-DSA-65 Verified, This Device Signs Without an ECDSA Half"
+      },
+      "UNTRUSTED": {
+        "title": "Valid Math, Unknown Signer",
+        "detail": "Anyone Can Sign with Their Own Key, so Trust the Signer First"
+      },
+      "INVALID": {
+        "title": "Invalid Signature",
+        "detail": "Do Not Rely on This File"
+      },
+      "SIMULATED": {
+        "title": "Simulated Signature",
+        "detail": "Made in Simulation Mode with a Throwaway Key, Not by Zirah Hardware"
+      }
+    },
+    "checks": {
+      "hash": {
+        "ok": "File Matches the Signed Digest",
+        "fail": "File Differs from the Signed Digest"
+      },
+      "intact": {
+        "ok": "Nothing Added After Signing",
+        "fail": "Data Added After Signing"
+      },
+      "context": {
+        "ok": "File-Signing Context zirah-doc-v1",
+        "fail": "Wrong Signature Context"
+      },
+      "mldsa": {
+        "ok": "ML-DSA-65 Signature Verified",
+        "fail": "ML-DSA-65 Signature Failed"
+      },
+      "ecdsa": {
+        "ok": "ECDSA P-256 Signature Verified",
+        "fail": "ECDSA P-256 Signature Failed"
+      },
+      "trusted": {
+        "ok": "Signed by a Trusted Device",
+        "fail": "Signer Not in the Trusted Keys"
+      },
+      "hardware": {
+        "ok": "Made by Zirah Hardware",
+        "fail": "Made in Simulation Mode"
+      },
+      "ecdsa_absent": {
+        "ok": "No ECDSA Half, Post-Quantum Only",
+        "fail": "No ECDSA Half"
+      },
+      "ecdsa_missing": {
+        "ok": "ECDSA Half Present",
+        "fail": "ECDSA Half Missing but Required"
+      }
+    }
+  },
+  "device": {
+    "selfcheck": "Self-Check",
+    "selfcheck_sub": "Talks to Every Part of the Device Without Signing a File",
+    "run_selfcheck": "Run Self-Check",
+    "selfcheck_pass": "Self-Check Passed",
+    "selfcheck_fail": "Self-Check Found a Problem",
+    "steps": {
+      "LINK": "Link Answers",
+      "FIRMWARE": "Firmware and Protocol",
+      "KAT": "Boot Known-Answer Tests",
+      "HEALTH": "Fresh Entropy Health Test",
+      "SIGNAL": "Live Noise Looks Healthy",
+      "KEYS": "Keys Match the Trusted Copy",
+      "IDENTITY": "Device Proves it Holds the Key",
+      "HARDENING": "MPU and Stack Canary",
+      "RDP": "Flash Readout Protection",
+      "ATECC": "ATECC608 Secure Element"
+    },
+    "keys": "Keys",
+    "keys_sub": "Fingerprints Match the PQ and EC Lines on the OLED",
+    "pq": "ML-DSA-65",
+    "ec": "ECDSA P-256",
+    "trust": "Trust This Device",
+    "replace": "Replace Trusted Key",
+    "export": "Export Public Keys",
+    "generate": "Generate Key",
+    "regenerate": "Replace Device Key",
+    "regenerate_text": "The Current Key Is Destroyed for Good, the Device Asks for a USER Press, and You Trust the New Key Again Afterwards. Export the Old Public Keys First if Others Still Verify Your Signatures",
+    "entropy": "Entropy Source",
+    "entropy_sub": "Avalanche Noise Through SP 800-90B Health Tests",
+    "state": "State",
+    "symbols": "Symbols Tested",
+    "failures": "Failures Since Boot",
+    "boost": "Boost Voltage",
+    "assumed": "Assumed Entropy",
+    "sources": "Extra Randomness",
+    "sources_sub": "Mixed into Every Key, Mask Refresh and Signature, Credited with No Entropy",
+    "source_b": "Second Noise Source",
+    "source_b_absent": "Not Fitted",
+    "source_b_present": "Live on PB1",
+    "corr": "A-B Correlation",
+    "ecc_rng": "ATECC608 Generator",
+    "ecc_not_ready": "Not Provisioned",
+    "ecc_absent": "Not Fitted",
+    "simulated": "Simulated",
+    "temp": "Die Temperature",
+    "celsius": "{value} °C",
+    "mcu_rng": "STM32 Generator",
+    "mcu_ok": "Mixed In",
+    "mcu_fault": "Failed, Not Used",
+    "mcu_off": "Off",
+    "jitter": "LSI Clock Jitter",
+    "jitter_absent": "No Jitter Found",
+    "accel": "Board Accelerometer",
+    "accel_absent": "Not Answering or No Noise",
+    "run_health": "Run Health Test",
+    "confirm": "Button Confirmation",
+    "confirm_sub": "Turning it Off Needs a Button Press, and Every Power-Up Turns it Back On",
+    "firmware": "Firmware",
+    "version": "Version",
+    "board": "Board",
+    "board_discovery": "STM32F4DISCOVERY",
+    "board_devebox": "DevEBox STM32F4XX_M",
+    "protocol": "Protocol",
+    "kat": "Known-Answer Tests",
+    "mpu": "MPU",
+    "canary": "Stack Canary",
+    "stack": "Stack",
+    "rdp": "Readout Protection",
+    "rdp_0": "Level 0, Off",
+    "rdp_1": "Level 1, On",
+    "rdp_2": "Level 2, Permanent",
+    "build": "Build",
+    "build_match": "Matches This PC",
+    "build_differs": "Differs, Run flash.bat",
+    "build_unknown": "Not Reported",
+    "signatures": "Signatures Since Boot",
+    "bench": "Benchmark",
+    "bench_sub": "Times 20 Masked Signatures with a Throwaway Key, Never the Device Key",
+    "run_bench": "Run Benchmark",
+    "bench_running": "{done} of {of} Signatures",
+    "bench_done": "Benchmark Finished",
+    "bench_min": "Min",
+    "bench_median": "Median",
+    "bench_max": "Max",
+    "bench_trng": "Entropy for 32 Bytes",
+    "bench_refresh": "Mask Refresh",
+    "bench_sign": "Masked Signature",
+    "bench_verify": "On-Device Check",
+    "bench_attempts": "Rejection Attempts",
+    "bench_keygen": "Key Generation {value} ms",
+    "bench_ntt": "NTT {fast} Cycles, C Code {slow}, {ratio}x Faster",
+    "bench_invntt": "Inverse NTT {fast} Cycles, C Code {slow}, {ratio}x Faster",
+    "on": "On",
+    "off": "Off",
+    "passed": "Passed",
+    "failed": "Failed",
+    "sim": "Simulation Controls",
+    "sim_sub": "Only Present in Simulation Mode, Where No OLED or Button Exists",
+    "sim_press": "Press USER",
+    "no_device": "Connect the Zirah to See Its Status"
+  },
+  "trust": {
+    "title": "Trust This Device",
+    "title_replace": "Replace the Trusted Key",
+    "intro": "Signing Only Works with Keys You Have Checked Against the Device Itself",
+    "step": "Read the PQ Line on the OLED and Type the Eight Characters Here",
+    "changed": "The Keys on the Device No Longer Match the Copy You Trusted",
+    "placeholder": "PQ Fingerprint",
+    "mismatch": "That Does Not Match the Key This PC Received Through USB. Check the OLED Again, and Do Not Trust the Device Until You Know Why",
+    "button": "Trust This Device",
+    "button_replace": "Replace and Trust",
+    "cancel": "Cancel",
+    "done": "Device Trusted"
+  },
+  "history": {
+    "title": "History",
+    "sub": "Time, File Name, Digest and Result Only, Never Contents or Keys",
+    "empty": "No Operations Yet",
+    "clear": "Clear History",
+    "cleared": "History Cleared",
+    "sign": "Sign",
+    "verify": "Verify",
+    "unknown": "Unknown Result",
+    "simulated": "Simulated"
+  },
+  "diag": {
+    "title": "Diagnostics",
+    "sub": "Non-Sensitive: No Keys, Signatures, File Contents or File Hashes",
+    "include_uid": "Include Full Device ID",
+    "export": "Export Diagnostics",
+    "close": "Close",
+    "exported": "Diagnostics Saved"
+  },
+  "toast": {
+    "connected": "Connected to {port}",
+    "disconnected": "Device Disconnected",
+    "sim_on": "Simulation Mode On",
+    "sim_off": "Simulation Mode Off",
+    "signed": "Signature Saved",
+    "keys_exported": "Public Keys Exported",
+    "selfcheck_done": "Self-Check Finished",
+    "health_ok": "Entropy Source Passed Its Health Test",
+    "keygen_done": "New Key Generated, Trust it Before Signing",
+    "confirm_on": "Button Confirmation On",
+    "confirm_off": "Button Confirmation Off",
+    "bench_done": "Benchmark Finished",
+    "bench_saved": "The Numbers Are Saved in the Zirah Data Folder"
+  },
+  "errors": {
+    "DEFAULT": {
+      "title": "Something Went Wrong",
+      "hint": "Code {code}, Details Are in Diagnostics"
+    },
+    "TIMEOUT": {
+      "title": "No Button Press in Time",
+      "hint": "Nothing Was Signed, Start Again When Ready"
+    },
+    "CANCELLED": {
+      "title": "Cancelled",
+      "hint": "Nothing Was Signed"
+    },
+    "BUTTON_STUCK": {
+      "title": "Button Held Down",
+      "hint": "Release the Button and Try Again"
+    },
+    "LOCKED": {
+      "title": "Signing Is Locked",
+      "hint": "A Signature Failed Its Self-Check, Power-Cycle the Device"
+    },
+    "SELF_CHECK": {
+      "title": "Signature Failed the Device Self-Check",
+      "hint": "It Was Withheld and Signing Is Locked Until Power-Cycle"
+    },
+    "NO_KEY": {
+      "title": "No Signing Key",
+      "hint": "Generate a Key in the Device Tab"
+    },
+    "NO_ENTROPY": {
+      "title": "Entropy Source Unhealthy",
+      "hint": "The Key Cannot Be Loaded Until the Source Passes Its Test"
+    },
+    "ENTROPY_FAULT": {
+      "title": "Entropy Source Failed Its Test",
+      "hint": "Nothing Was Signed, Check the Boost Voltage and Wiring"
+    },
+    "KEY_EXISTS": {
+      "title": "A Key Already Exists",
+      "hint": "Use Replace Device Key to Make a New One"
+    },
+    "PCT": {
+      "title": "New Key Failed Its Consistency Test",
+      "hint": "The Key Was Not Stored"
+    },
+    "FLASH": {
+      "title": "Flash Write Failed",
+      "hint": "The Key Was Not Stored"
+    },
+    "RATE_LIMIT": {
+      "title": "Identity Proof Rate Limit",
+      "hint": "Wait a Moment, or Power-Cycle for a New Budget"
+    },
+    "NO_ECC": {
+      "title": "ATECC608 Not Provisioned",
+      "hint": "Signatures Are Post-Quantum Only"
+    },
+    "ATECC": {
+      "title": "ATECC608 Error",
+      "hint": "Check the Wiring of the Secure Element"
+    },
+    "BAD_ARG": {
+      "title": "The Device Rejected the Request",
+      "hint": "Details Are in Diagnostics"
+    },
+    "UNKNOWN": {
+      "title": "The Device Does Not Know That Command",
+      "hint": "Check the Firmware Version"
+    },
+    "FATAL": {
+      "title": "The Device Halted",
+      "hint": "Power-Cycle the Device"
+    },
+    "NOT_READY": {
+      "title": "Device Not Ready",
+      "hint": "See the Checks in the Device Tab"
+    },
+    "UNTRUSTED_KEY": {
+      "title": "Device Not Trusted Yet",
+      "hint": "Trust it After Comparing the Fingerprints with the OLED"
+    },
+    "KEY_CHANGED": {
+      "title": "The Device Key Changed",
+      "hint": "Replace the Trusted Key Only if You Made a New Key"
+    },
+    "PC_VERIFY_FAILED": {
+      "title": "The Signature Failed on This PC",
+      "hint": "Nothing Was Saved"
+    },
+    "FILE_CHANGED": {
+      "title": "The File Changed During Signing",
+      "hint": "Nothing Was Saved, Sign it Again"
+    },
+    "EXISTS": {
+      "title": "That File Already Exists",
+      "hint": "Zirah Never Overwrites Files, Choose Another Name"
+    },
+    "BAD_SUFFIX": {
+      "title": "Wrong File Name",
+      "hint": "Signature Files End in .zirah.json, and a Signed Copy Keeps the Original's Ending"
+    },
+    "NO_FOLDER": {
+      "title": "Folder Not Found",
+      "hint": "Choose Another Destination"
+    },
+    "NO_DEST": {
+      "title": "No Destination",
+      "hint": "Choose Where to Save the Signature File"
+    },
+    "NO_FILE": {
+      "title": "File Not Available",
+      "hint": "Choose the File Again"
+    },
+    "NOT_A_FILE": {
+      "title": "Not a File",
+      "hint": "Only Regular Files Can Be Signed"
+    },
+    "BAD_PATH": {
+      "title": "Unusable Path",
+      "hint": "Choose the File with the Dialog"
+    },
+    "DIGEST_MISMATCH": {
+      "title": "The Device Received a Different Digest",
+      "hint": "Signing Was Cancelled, Check the Cable"
+    },
+    "LINK_LOST": {
+      "title": "Connection Lost",
+      "hint": "Check the USB Cable"
+    },
+    "PORT_BUSY": {
+      "title": "The Port Is in Use",
+      "hint": "Close Other Programs That Use the Port"
+    },
+    "NOT_ZIRAH": {
+      "title": "That Port Is Not a Zirah",
+      "hint": "Check That the Firmware Is Flashed"
+    },
+    "NO_DEVICE": {
+      "title": "No Device Connected",
+      "hint": "Plug in the Zirah or Turn on Simulation"
+    },
+    "MANY_DEVICES": {
+      "title": "More Than One Zirah Connected",
+      "hint": "Unplug All but One"
+    },
+    "BAD_SIGNATURE_FILE": {
+      "title": "Not a Zirah Signature File",
+      "hint": "Choose the .zirah.json File"
+    },
+    "BAD_KEYS_FILE": {
+      "title": "Not a Zirah Public-Key File",
+      "hint": "Ask the Signer for Their Exported Keys"
+    },
+    "BAD_FIELD": {
+      "title": "Malformed Data",
+      "hint": "Details Are in Diagnostics"
+    },
+    "TOO_LARGE": {
+      "title": "File Too Large",
+      "hint": "That File Is Not a Signature File"
+    },
+    "FP_TYPED_WRONG": {
+      "title": "Fingerprint Does Not Match",
+      "hint": "Type the PQ Line Exactly as Shown on the OLED"
+    },
+    "BUSY": {
+      "title": "Another Operation Is Running",
+      "hint": "Wait for it to Finish"
+    },
+    "NO_TRUSTED": {
+      "title": "No Trusted Device Yet",
+      "hint": "Trust the Device First"
+    },
+    "NOT_ALLOWED": {
+      "title": "Not Allowed",
+      "hint": "Only Files Created in This Session Can Be Shown"
+    },
+    "NO_DIALOG": {
+      "title": "No File Dialog Available",
+      "hint": "Drop the File on the Window Instead"
+    },
+    "NOT_IN_SIMULATION": {
+      "title": "Not Needed in Simulation",
+      "hint": "The Simulated Key Is Trusted for This Session"
+    },
+    "NO_SIGNATURE": {
+      "title": "No Signature Found",
+      "hint": "This File Carries No Zirah Signature, so Choose Its .zirah.json File"
+    },
+    "FORBIDDEN": {
+      "title": "Request Refused",
+      "hint": "Restart Zirah"
+    },
+    "BAD_REQUEST": {
+      "title": "Request Refused",
+      "hint": "Details Are in Diagnostics"
+    },
+    "INTERNAL": {
+      "title": "Unexpected Error",
+      "hint": "Details Are in Diagnostics"
+    },
+    "OFFLINE": {
+      "title": "Lost Contact with the Zirah App",
+      "hint": "Restart Zirah"
+    },
+    "BAD_BYTES": {
+      "title": "The Device Sent a Reply Zirah Could Not Read",
+      "hint": "Unplug the Micro-USB Cable, Reconnect it and Try Again"
+    },
+    "BAD_COMMAND": {
+      "title": "Zirah Sent a Command the Device Refused",
+      "hint": "Check That the Firmware Is Version 1.0.0, Then Try Again"
+    },
+    "BAD_EVT": {
+      "title": "The Device Sent a Reply Zirah Could Not Read",
+      "hint": "Unplug the Micro-USB Cable, Reconnect it and Try Again"
+    },
+    "BAD_PEEK": {
+      "title": "The Device Sent a Reply Zirah Could Not Read",
+      "hint": "Unplug the Micro-USB Cable, Reconnect it and Try Again"
+    },
+    "BAD_UID": {
+      "title": "The Device Sent a Reply Zirah Could Not Read",
+      "hint": "Unplug the Micro-USB Cable, Reconnect it and Try Again"
+    },
+    "LINE_TOO_LONG": {
+      "title": "The Device Sent a Reply Zirah Could Not Read",
+      "hint": "Unplug the Micro-USB Cable, Reconnect it and Try Again"
+    },
+    "TOO_MANY_LINES": {
+      "title": "The Device Sent a Reply Zirah Could Not Read",
+      "hint": "Unplug the Micro-USB Cable, Reconnect it and Try Again"
+    },
+    "NO_PONG": {
+      "title": "The Board Did Not Answer",
+      "hint": "Check That the Micro-USB Cable Is in CN5 and Is a Data Cable"
+    },
+    "FP_MISMATCH": {
+      "title": "The Device's Key Does Not Match Its Own Fingerprint",
+      "hint": "Do Not Sign with This Device. Run the Self-Check and Power-Cycle the Board"
+    },
+    "BAD_ECC_KEY": {
+      "title": "The Device Sent an Invalid ECDSA Key",
+      "hint": "Run the Self-Check; the ATECC608 May Need Checking"
+    },
+    "NO_DILITHIUM": {
+      "title": "A Required Package Is Missing",
+      "hint": "Run setup.bat in the Zirah Folder Again"
+    },
+    "NO_PYSERIAL": {
+      "title": "A Required Package Is Missing",
+      "hint": "Run setup.bat in the Zirah Folder Again"
+    },
+    "NO_NAME": {
+      "title": "No Free Name for the Signature File",
+      "hint": "Press Change and Choose a Name Yourself"
+    },
+    "READ_FAILED": {
+      "title": "The File Could Not Be Read",
+      "hint": "Close Any Program That Has it Open, or Copy it to a Local Folder, Then Try Again"
+    },
+    "WRITE_FAILED": {
+      "title": "The Signature Could Not Be Saved There",
+      "hint": "Press Change and Pick Another Folder, Then Sign Again; Nothing Was Saved"
+    },
+    "SIMULATED": {
+      "title": "Needs the Real Board",
+      "hint": "The Simulator Does Not Time or Measure Anything"
+    },
+    "NO_SOURCE_B": {
+      "title": "No Second Noise Source",
+      "hint": "None Was Found on PB1 When the Board Started"
+    },
+    "BAD_BENCH": {
+      "title": "Benchmark Reply Not Understood",
+      "hint": "Update the Firmware with flash.bat"
+    },
+    "ALREADY_SIGNED": {
+      "title": "Already Signed",
+      "hint": "This File Carries a Zirah Signature, so Verify it, or Sign the Original"
+    }
+  }
+}

@@ -1,0 +1,82 @@
+Opening file: 'sourceA_1M_sym8.bin' (SHA-256 hash 4c67df5446f752106ca19018d5883050b3a63adb22371f438d12ff66b5fd3c06)
+Loaded 1000000 samples of 256 distinct 8-bit-wide symbols
+Number of Binary samples: 8000000
+Calculating baseline statistics...
+	Raw Mean: 129.127268
+	Median: 132.000000
+	Binary: false
+
+Literal MCV Estimate: mode = 6370, p-hat = 0.0063699999999999998, p_u = 0.0065749270841243901
+Bitstring MCV Estimate: mode = 4013083, p-hat = 0.50163537499999999, p_u = 0.50209071918477743
+H_original: 7.248809
+H_bitstring: 0.993980
+min(H_original, 8 X H_bitstring): 7.248809
+Chi square independence
+	score = 63922.548154
+	degrees of freedom = 63886
+	p-value = 0.458548
+
+Chi square goodness of fit
+	score = 2294.825130
+	degrees of freedom = 2295
+	p-value = 0.497104
+
+** Passed chi square tests
+
+Literal Longest Repeated Substring results
+	P_col: 0.004012
+	Length of LRS: 4
+	Pr(X >= 1): 1.000000
+** Passed length of longest repeated substring test
+
+Beginning initial tests...
+
+Initial test results
+              excursion: 59005.8
+     numDirectionalRuns: 666770
+     lenDirectionalRuns: 8
+  numIncreasesDecreases: 501878
+          numRunsMedian: 497247
+          lenRunsMedian: 20
+           avgCollision: 20.4711
+           maxCollision: 70
+         periodicity(1): 4156
+         periodicity(2): 4070
+         periodicity(8): 4165
+        periodicity(16): 4161
+        periodicity(32): 4083
+          covariance(1): 1.67024e+10
+          covariance(2): 1.66966e+10
+          covariance(8): 1.66764e+10
+         covariance(16): 1.66875e+10
+         covariance(32): 1.66692e+10
+            compression: 1.06727e+06
+
+Beginning permutation tests... these may take some time
+
+
+                statistic  C[i][0]  C[i][1]  C[i][2]
+----------------------------------------------------
+                excursion      24       0       6
+       numDirectionalRuns       6       0       6
+       lenDirectionalRuns       7       6       0
+    numIncreasesDecreases      21       0       6
+           numRunsMedian*   10000       0       0
+            lenRunsMedian       2       4       3
+             avgCollision      10       0       6
+             maxCollision      17       1       5
+           periodicity(1)       5       1     304
+           periodicity(2)       6       0      55
+           periodicity(8)       6       0     841
+          periodicity(16)       6       0     679
+          periodicity(32)       6       0      30
+           covariance(1)*       0       0   10000
+           covariance(2)*       1       0    9999
+            covariance(8)       6       0      23
+           covariance(16)       6       0     676
+           covariance(32)      27       0       6
+              compression       6       0       8
+(* denotes failed test)
+
+** Failed IID permutation tests
+

@@ -1,0 +1,225 @@
+{
+  "tool": "zirah validate",
+  "host_version": "1.0.0",
+  "started_utc": "2026-11-05T05:15:38Z",
+  "simulated": false,
+  "device": {
+    "uid": "260046000451383137393031",
+    "firmware": "1.0.0",
+    "protocol": 1,
+    "fw_hash": "8ED31C35FCAD865E6DFA836894AA6D9C",
+    "pc_zirah_bin_hash": "8ED31C35FCAD865E6DFA836894AA6D9C",
+    "board": "devebox",
+    "rdp": 1,
+    "mpu": true,
+    "canary": true,
+    "stack_bytes": 55040,
+    "atecc": "ready",
+    "stm32_rng": "ok",
+    "jitter": "live",
+    "accel": "absent",
+    "accel_chip": "none",
+    "oled": true,
+    "key": "present",
+    "pq_fp": "DB787DBF",
+    "ec_fp": "5B844DC9",
+    "h_assumed": "1.00 bits/symbol",
+    "vdd_mv": 3156,
+    "temp_c10_start": 449,
+    "source_b": "absent",
+    "temp_c10_end": 478,
+    "trng_end": "OK"
+  },
+  "readiness": {
+    "state": "READY",
+    "checks": [
+      {
+        "key": "protocol",
+        "ok": true,
+        "required": true,
+        "title": "Firmware Compatible",
+        "detail": "Firmware 1.0.0, Protocol 1; this app needs Protocol 1"
+      },
+      {
+        "key": "kat",
+        "ok": true,
+        "required": true,
+        "title": "Boot Self-Test Passed",
+        "detail": "Known-answer tests for SHAKE256 and ML-DSA-65 ran at power-up"
+      },
+      {
+        "key": "trng",
+        "ok": true,
+        "required": true,
+        "title": "Entropy Source Healthy",
+        "detail": "State OK"
+      },
+      {
+        "key": "key",
+        "ok": true,
+        "required": true,
+        "title": "Signing Key Loaded",
+        "detail": "Key Masked in CCM"
+      },
+      {
+        "key": "signing",
+        "ok": true,
+        "required": true,
+        "title": "Signing Unlocked",
+        "detail": "A failed self-check locks signing until power-cycle"
+      },
+      {
+        "key": "trusted",
+        "ok": true,
+        "required": true,
+        "title": "Keys Trusted on This PC",
+        "detail": "Keys Match the Trusted Copy"
+      },
+      {
+        "key": "oled",
+        "ok": true,
+        "required": false,
+        "title": "OLED Present",
+        "detail": "Without the OLED the digest cannot be compared before pressing USER"
+      },
+      {
+        "key": "confirm",
+        "ok": true,
+        "required": false,
+        "title": "USER Button Confirmation On",
+        "detail": "When off, the device signs without a button press"
+      },
+      {
+        "key": "atecc",
+        "ok": true,
+        "required": false,
+        "title": "ATECC608 Ready",
+        "detail": "Without it signatures are post-quantum only"
+      },
+      {
+        "key": "hardening",
+        "ok": true,
+        "required": false,
+        "title": "Firmware Hardening Active",
+        "detail": "MPU On, Stack Canary On"
+      },
+      {
+        "key": "rdp",
+        "ok": true,
+        "required": false,
+        "title": "Readout Protection On",
+        "detail": "Level 1, the Debugger Cannot Read the Flash"
+      },
+      {
+        "key": "fwmatch",
+        "ok": true,
+        "required": false,
+        "title": "Firmware Matches This PC's Copy",
+        "detail": "The Board Runs the zirah-devebox.bin in This Zirah Folder"
+      }
+    ]
+  },
+  "health": {
+    "ok": true,
+    "trng": "OK",
+    "health": {
+      "symbols": "1024",
+      "rct_cut": "21",
+      "rct_max": "2",
+      "apt_cut": "311",
+      "apt_max": "2"
+    },
+    "vbias_mv": 13959,
+    "source_b": "absent",
+    "error": ""
+  },
+  "sources": {
+    "a": {
+      "n": 4096.0,
+      "min": 1698.0,
+      "max": 2367.0,
+      "mean": 2024.0,
+      "std": 94.8,
+      "clipped": 0.0,
+      "distinct8": 256.0,
+      "mcv_h": 6.42,
+      "autocorr1": 0.091,
+      "corr_ab": null
+    }
+  },
+  "correlation": null,
+  "identity": {
+    "ok": true,
+    "detail": "Proof Verified on This PC"
+  },
+  "bench": {
+    "build": {
+      "ntt": "asm",
+      "n": "20",
+      "cpu_mhz": "168",
+      "sources": "1",
+      "ecc_rng": "1",
+      "stm32_rng": "1",
+      "jitter": "1",
+      "accel": "0"
+    },
+    "stages": {
+      "trng32_us": {
+        "n": 20,
+        "min": 36466,
+        "median": 36494,
+        "max": 36515,
+        "mean": 36490
+      },
+      "refresh_us": {
+        "n": 20,
+        "min": 63806,
+        "median": 64193,
+        "max": 64235,
+        "mean": 64118
+      },
+      "sign_us": {
+        "n": 20,
+        "min": 57823,
+        "median": 157444,
+        "max": 519765,
+        "mean": 217463
+      },
+      "verify_us": {
+        "n": 20,
+        "min": 39918,
+        "median": 39920,
+        "max": 39922,
+        "mean": 39920
+      },
+      "attempts": {
+        "n": 20,
+        "min": 1,
+        "median": 5,
+        "max": 24,
+        "mean": 8
+      }
+    },
+    "values": {
+      "keygen_us": {
+        "value": 79730
+      },
+      "mask_load_us": {
+        "value": 58877
+      },
+      "ntt_cycles": {
+        "signer": 8879,
+        "c": 31295
+      },
+      "invntt_cycles": {
+        "signer": 9455,
+        "c": 31932
+      },
+      "shake256_1kb_cycles": {
+        "value": 271922
+      }
+    }
+  },
+  "notes": [],
+  "finished_utc": "2026-11-05T05:15:49Z"
+}

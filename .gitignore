@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Firmware build outputs and the downloaded libopencm3 (firmware/get_libopencm3.sh fetches it)
+firmware/build/
+firmware/build-devebox/
+firmware/libopencm3/
+firmware/generated.*.ld
+
+# Test runs
+tests/out/
+
+# Local captures (the published ones are in the Zenodo archive)
+data/entropy/*.bin
+data/entropy/*_meta.json

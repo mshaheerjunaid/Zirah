@@ -1,0 +1,2 @@
+# Desktop app (ui/zirah_app.py). 6.7 or newer: variable-font weights.
+PySide6-Essentials>=6.7

@@ -1,0 +1,7 @@
+# Command line tool and the shared host core
+pyserial>=3.5
+dilithium-py>=1.4
+cryptography>=42
+# Entropy analysis (analysis/entropy_report.py)
+numpy>=1.26
+matplotlib>=3.8

@@ -1,0 +1,1237 @@
+<title>Zirah Board A Build</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: the board drawing stays in view on the left while the current step and the list sit on the right;
+   on a phone the step comes first, then the drawing, then the list. */
+:root {
+  --paper: #f4f6f2;
+  --ink: #17201b;
+  --muted: #56615a;
+  --rule: #d3d8cf;
+  --card: #ffffff;
+  --hl: #c2187a;
+  --hl-soft: #f8d5e8;
+  --go: #1f6b46;
+  --go-ink: #ffffff;
+  /* The drawing shows a real white breadboard, so it keeps these colours in both themes. */
+  --bb: #f1f0e8; --bb-edge: #c6c3b5; --groove: #e1ded2; --holec: #b3b0a4; --bb-ink: #6a675c;
+  --sp: #f7dede; --sm: #dce5f4; --spt: #c62828; --smt: #1f4f99;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111614; --ink: #e7ece8; --muted: #a2aca5; --rule: #2b342f; --card: #19201c;
+    --hl: #f05aa3; --hl-soft: #4b1c34; --go: #3fae74; --go-ink: #07140d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111614; --ink: #e7ece8; --muted: #a2aca5; --rule: #2b342f; --card: #19201c;
+  --hl: #f05aa3; --hl-soft: #4b1c34; --go: #3fae74; --go-ink: #07140d; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.5; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top .wrap { padding-block: 22px 14px; }
+h1 { font-size: 1.7rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 14px; max-width: 62ch; }
+.bar { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--go); transition: width .25s; }
+.bench { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "now" "drawing" "list"; padding-block: 8px 48px; }
+.now { grid-area: now; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px; min-width: 0; }
+.drawing { grid-area: drawing; min-width: 0; overflow-x: auto; }
+@media (max-width: 899px) { #board { min-width: 560px; } }
+.list { grid-area: list; min-width: 0; }
+@media (min-width: 900px) {
+  .bench { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: "drawing now" "drawing list"; align-items: start; }
+  .drawing { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  #board { max-height: calc(100vh - 28px); }
+}
+.where { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 6px; color: var(--muted); font-size: .92rem; }
+#stage { border: 1px solid var(--rule); border-radius: 999px; padding: 1px 10px; }
+h2 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 8px; text-wrap: balance; }
+.note { color: var(--muted); font-size: .95rem; margin: 0 0 10px; }
+.body p, .body ul { margin: 0 0 10px; }
+.body ul { padding-left: 1.2em; }
+.body li { margin-bottom: 4px; }
+.kit { columns: 2; column-gap: 24px; }
+@media (max-width: 520px) { .kit { columns: 1; } }
+b.hl { background: var(--hl-soft); padding: 0 .3em; border-radius: 4px; white-space: nowrap; }
+pre { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 0 0 10px; }
+code { font-family: var(--mono); font-size: .95rem; }
+.nav { display: flex; gap: 12px; margin-top: 14px; }
+.nav button { flex: 1; min-height: 50px; font: 700 1.05rem var(--font); border-radius: 10px; cursor: pointer;
+  border: 2px solid var(--rule); background: transparent; color: var(--ink); }
+.nav button.go { background: var(--go); border-color: var(--go); color: var(--go-ink); }
+.nav button:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+#board { width: 100%; height: auto; display: block; }
+.grp h3 { font-size: .95rem; margin: 14px 0 4px; color: var(--muted); }
+.grp ol { list-style: none; margin: 0; padding: 0; }
+.grp button { width: 100%; display: flex; gap: 10px; text-align: left; background: none; border: 0; border-radius: 8px;
+  padding: 6px 8px; font: inherit; font-size: .95rem; color: var(--ink); cursor: pointer; }
+.grp button:hover { background: var(--card); }
+.grp .n { min-width: 2.2em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.grp button.done .n::after { content: " \2713"; color: var(--go); }
+.grp button.cur { background: var(--hl-soft); font-weight: 700; }
+/* drawing */
+.bb { fill: var(--bb); stroke: var(--bb-edge); }
+.groove { fill: var(--groove); }
+.sp { fill: var(--sp); } .sm { fill: var(--sm); }
+text.spt { fill: var(--spt); } text.smt { fill: var(--smt); }
+.hole { fill: var(--holec); }
+.num, .lab { font: 700 9px var(--font); fill: var(--bb-ink); text-anchor: middle; }
+.lab.spt, .lab.smt { font-size: 13px; }
+.ring { fill: none; stroke: var(--hl); stroke-width: 2.6; display: none; }
+.part.now .ring { display: inline; animation: pulse 1.3s ease-in-out infinite; }
+@keyframes pulse { 50% { stroke-opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .part.now .ring { animation: none; } .bar span { transition: none; } }
+.part.later { display: none; }
+.part.placed { opacity: .8; }
+.leg { fill: #3a3a3a; } .legl { fill: #dcdcdc; } .end { fill: #222; }
+.wireleg { stroke: #8c8c8c; stroke-width: 2; fill: none; }
+.rbody { fill: #e2c890; stroke: #96773e; }
+.cbody { fill: #df8a3d; stroke: #8b4c16; }
+.ctext { font: 700 6.5px var(--font); fill: #2a1606; text-anchor: middle; }
+.ebody { fill: #1f3d73; stroke: #0d2047; } .stripe { fill: #c8d2e5; }
+.pm { font: 700 12px var(--font); fill: var(--spt); }
+.tbody { fill: #2b2b2b; } .tleg { font: 700 8px var(--font); fill: #ffffff; }
+.chip { fill: #242424; } .notch { fill: var(--groove); }
+.pin { font: 700 8px var(--font); fill: #ffffff; text-anchor: middle; }
+.chipt { font: 700 10px var(--font); fill: #ffffff; text-anchor: middle; }
+.w { fill: none; stroke-width: 5; stroke-linecap: round; }
+.wo { fill: none; stroke: rgba(0, 0, 0, .35); stroke-width: 7; stroke-linecap: round; }
+.flag { fill: #ffffff; stroke: var(--bb-edge); }
+.flagt { font: 700 9.5px var(--font); fill: #262626; text-anchor: middle; }
+.tag { font: 700 9px var(--font); fill: #3b392f; } .tag.tend { text-anchor: end; }
+.probe { stroke: #ffffff; stroke-width: 2.5; }
+.probet { font: 700 9px var(--font); fill: #262626; }
+
+</style>
+<header class="top">
+  <div class="wrap">
+    <h1>Zirah Board A Build</h1>
+    <p class="sub">Source A on the DevEBox as built, one part at a time, from row 1 down. Every hole here
+    comes from the project's layout script after its netlist check passed.</p>
+    <div class="bar" aria-hidden="true"><span id="barfill"></span></div>
+  </div>
+</header>
+<main class="wrap bench">
+  <section class="now" aria-live="polite">
+    <p class="where"><span id="count"></span><span id="stage"></span></p>
+    <h2 id="title"></h2>
+    <p class="note" id="note"></p>
+    <div id="body" class="body"></div>
+    <div class="nav">
+      <button id="prev" type="button">Back</button>
+      <button id="next" type="button" class="go">Next</button>
+    </div>
+  </section>
+  <section class="drawing"><svg id="board" viewBox="0 0 586 706" role="img" aria-label="Breadboard drawing">
+<rect x="90" y="20" width="384" height="672" rx="10" class="bb"/>
+<rect x="263" y="28" width="38" height="656" class="groove"/>
+<rect x="97.6" y="28" width="16.8" height="656" rx="4" class="sm"/>
+<text x="106" y="24" class="lab smt">−</text>
+<rect x="119.6" y="28" width="16.8" height="656" rx="4" class="sp"/>
+<text x="128" y="24" class="lab spt">+</text>
+<rect x="427.6" y="28" width="16.8" height="656" rx="4" class="sp"/>
+<text x="436" y="24" class="lab spt">+</text>
+<rect x="449.6" y="28" width="16.8" height="656" rx="4" class="sm"/>
+<text x="458" y="24" class="lab smt">−</text>
+<text x="151" y="49.5" class="num">1</text>
+<text x="413" y="49.5" class="num">1</text>
+<rect x="103" y="43" width="6" height="6" class="hole"/>
+<rect x="125" y="43" width="6" height="6" class="hole"/>
+<rect x="433" y="43" width="6" height="6" class="hole"/>
+<rect x="455" y="43" width="6" height="6" class="hole"/>
+<rect x="169" y="43" width="6" height="6" class="hole"/>
+<rect x="189" y="43" width="6" height="6" class="hole"/>
+<rect x="209" y="43" width="6" height="6" class="hole"/>
+<rect x="229" y="43" width="6" height="6" class="hole"/>
+<rect x="249" y="43" width="6" height="6" class="hole"/>
+<rect x="309" y="43" width="6" height="6" class="hole"/>
+<rect x="329" y="43" width="6" height="6" class="hole"/>
+<rect x="349" y="43" width="6" height="6" class="hole"/>
+<rect x="369" y="43" width="6" height="6" class="hole"/>
+<rect x="389" y="43" width="6" height="6" class="hole"/>
+<text x="151" y="69.5" class="num">2</text>
+<text x="413" y="69.5" class="num">2</text>
+<rect x="103" y="63" width="6" height="6" class="hole"/>
+<rect x="125" y="63" width="6" height="6" class="hole"/>
+<rect x="433" y="63" width="6" height="6" class="hole"/>
+<rect x="455" y="63" width="6" height="6" class="hole"/>
+<rect x="169" y="63" width="6" height="6" class="hole"/>
+<rect x="189" y="63" width="6" height="6" class="hole"/>
+<rect x="209" y="63" width="6" height="6" class="hole"/>
+<rect x="229" y="63" width="6" height="6" class="hole"/>
+<rect x="249" y="63" width="6" height="6" class="hole"/>
+<rect x="309" y="63" width="6" height="6" class="hole"/>
+<rect x="329" y="63" width="6" height="6" class="hole"/>
+<rect x="349" y="63" width="6" height="6" class="hole"/>
+<rect x="369" y="63" width="6" height="6" class="hole"/>
+<rect x="389" y="63" width="6" height="6" class="hole"/>
+<text x="151" y="89.5" class="num">3</text>
+<text x="413" y="89.5" class="num">3</text>
+<rect x="103" y="83" width="6" height="6" class="hole"/>
+<rect x="125" y="83" width="6" height="6" class="hole"/>
+<rect x="433" y="83" width="6" height="6" class="hole"/>
+<rect x="455" y="83" width="6" height="6" class="hole"/>
+<rect x="169" y="83" width="6" height="6" class="hole"/>
+<rect x="189" y="83" width="6" height="6" class="hole"/>
+<rect x="209" y="83" width="6" height="6" class="hole"/>
+<rect x="229" y="83" width="6" height="6" class="hole"/>
+<rect x="249" y="83" width="6" height="6" class="hole"/>
+<rect x="309" y="83" width="6" height="6" class="hole"/>
+<rect x="329" y="83" width="6" height="6" class="hole"/>
+<rect x="349" y="83" width="6" height="6" class="hole"/>
+<rect x="369" y="83" width="6" height="6" class="hole"/>
+<rect x="389" y="83" width="6" height="6" class="hole"/>
+<text x="151" y="109.5" class="num">4</text>
+<text x="413" y="109.5" class="num">4</text>
+<rect x="103" y="103" width="6" height="6" class="hole"/>
+<rect x="125" y="103" width="6" height="6" class="hole"/>
+<rect x="433" y="103" width="6" height="6" class="hole"/>
+<rect x="455" y="103" width="6" height="6" class="hole"/>
+<rect x="169" y="103" width="6" height="6" class="hole"/>
+<rect x="189" y="103" width="6" height="6" class="hole"/>
+<rect x="209" y="103" width="6" height="6" class="hole"/>
+<rect x="229" y="103" width="6" height="6" class="hole"/>
+<rect x="249" y="103" width="6" height="6" class="hole"/>
+<rect x="309" y="103" width="6" height="6" class="hole"/>
+<rect x="329" y="103" width="6" height="6" class="hole"/>
+<rect x="349" y="103" width="6" height="6" class="hole"/>
+<rect x="369" y="103" width="6" height="6" class="hole"/>
+<rect x="389" y="103" width="6" height="6" class="hole"/>
+<text x="151" y="129.5" class="num">5</text>
+<text x="413" y="129.5" class="num">5</text>
+<rect x="103" y="123" width="6" height="6" class="hole"/>
+<rect x="125" y="123" width="6" height="6" class="hole"/>
+<rect x="433" y="123" width="6" height="6" class="hole"/>
+<rect x="455" y="123" width="6" height="6" class="hole"/>
+<rect x="169" y="123" width="6" height="6" class="hole"/>
+<rect x="189" y="123" width="6" height="6" class="hole"/>
+<rect x="209" y="123" width="6" height="6" class="hole"/>
+<rect x="229" y="123" width="6" height="6" class="hole"/>
+<rect x="249" y="123" width="6" height="6" class="hole"/>
+<rect x="309" y="123" width="6" height="6" class="hole"/>
+<rect x="329" y="123" width="6" height="6" class="hole"/>
+<rect x="349" y="123" width="6" height="6" class="hole"/>
+<rect x="369" y="123" width="6" height="6" class="hole"/>
+<rect x="389" y="123" width="6" height="6" class="hole"/>
+<text x="151" y="149.5" class="num">6</text>
+<text x="413" y="149.5" class="num">6</text>
+<rect x="103" y="143" width="6" height="6" class="hole"/>
+<rect x="125" y="143" width="6" height="6" class="hole"/>
+<rect x="433" y="143" width="6" height="6" class="hole"/>
+<rect x="455" y="143" width="6" height="6" class="hole"/>
+<rect x="169" y="143" width="6" height="6" class="hole"/>
+<rect x="189" y="143" width="6" height="6" class="hole"/>
+<rect x="209" y="143" width="6" height="6" class="hole"/>
+<rect x="229" y="143" width="6" height="6" class="hole"/>
+<rect x="249" y="143" width="6" height="6" class="hole"/>
+<rect x="309" y="143" width="6" height="6" class="hole"/>
+<rect x="329" y="143" width="6" height="6" class="hole"/>
+<rect x="349" y="143" width="6" height="6" class="hole"/>
+<rect x="369" y="143" width="6" height="6" class="hole"/>
+<rect x="389" y="143" width="6" height="6" class="hole"/>
+<text x="151" y="169.5" class="num">7</text>
+<text x="413" y="169.5" class="num">7</text>
+<rect x="103" y="163" width="6" height="6" class="hole"/>
+<rect x="125" y="163" width="6" height="6" class="hole"/>
+<rect x="433" y="163" width="6" height="6" class="hole"/>
+<rect x="455" y="163" width="6" height="6" class="hole"/>
+<rect x="169" y="163" width="6" height="6" class="hole"/>
+<rect x="189" y="163" width="6" height="6" class="hole"/>
+<rect x="209" y="163" width="6" height="6" class="hole"/>
+<rect x="229" y="163" width="6" height="6" class="hole"/>
+<rect x="249" y="163" width="6" height="6" class="hole"/>
+<rect x="309" y="163" width="6" height="6" class="hole"/>
+<rect x="329" y="163" width="6" height="6" class="hole"/>
+<rect x="349" y="163" width="6" height="6" class="hole"/>
+<rect x="369" y="163" width="6" height="6" class="hole"/>
+<rect x="389" y="163" width="6" height="6" class="hole"/>
+<text x="151" y="189.5" class="num">8</text>
+<text x="413" y="189.5" class="num">8</text>
+<rect x="103" y="183" width="6" height="6" class="hole"/>
+<rect x="125" y="183" width="6" height="6" class="hole"/>
+<rect x="433" y="183" width="6" height="6" class="hole"/>
+<rect x="455" y="183" width="6" height="6" class="hole"/>
+<rect x="169" y="183" width="6" height="6" class="hole"/>
+<rect x="189" y="183" width="6" height="6" class="hole"/>
+<rect x="209" y="183" width="6" height="6" class="hole"/>
+<rect x="229" y="183" width="6" height="6" class="hole"/>
+<rect x="249" y="183" width="6" height="6" class="hole"/>
+<rect x="309" y="183" width="6" height="6" class="hole"/>
+<rect x="329" y="183" width="6" height="6" class="hole"/>
+<rect x="349" y="183" width="6" height="6" class="hole"/>
+<rect x="369" y="183" width="6" height="6" class="hole"/>
+<rect x="389" y="183" width="6" height="6" class="hole"/>
+<text x="151" y="209.5" class="num">9</text>
+<text x="413" y="209.5" class="num">9</text>
+<rect x="103" y="203" width="6" height="6" class="hole"/>
+<rect x="125" y="203" width="6" height="6" class="hole"/>
+<rect x="433" y="203" width="6" height="6" class="hole"/>
+<rect x="455" y="203" width="6" height="6" class="hole"/>
+<rect x="169" y="203" width="6" height="6" class="hole"/>
+<rect x="189" y="203" width="6" height="6" class="hole"/>
+<rect x="209" y="203" width="6" height="6" class="hole"/>
+<rect x="229" y="203" width="6" height="6" class="hole"/>
+<rect x="249" y="203" width="6" height="6" class="hole"/>
+<rect x="309" y="203" width="6" height="6" class="hole"/>
+<rect x="329" y="203" width="6" height="6" class="hole"/>
+<rect x="349" y="203" width="6" height="6" class="hole"/>
+<rect x="369" y="203" width="6" height="6" class="hole"/>
+<rect x="389" y="203" width="6" height="6" class="hole"/>
+<text x="151" y="229.5" class="num">10</text>
+<text x="413" y="229.5" class="num">10</text>
+<rect x="103" y="223" width="6" height="6" class="hole"/>
+<rect x="125" y="223" width="6" height="6" class="hole"/>
+<rect x="433" y="223" width="6" height="6" class="hole"/>
+<rect x="455" y="223" width="6" height="6" class="hole"/>
+<rect x="169" y="223" width="6" height="6" class="hole"/>
+<rect x="189" y="223" width="6" height="6" class="hole"/>
+<rect x="209" y="223" width="6" height="6" class="hole"/>
+<rect x="229" y="223" width="6" height="6" class="hole"/>
+<rect x="249" y="223" width="6" height="6" class="hole"/>
+<rect x="309" y="223" width="6" height="6" class="hole"/>
+<rect x="329" y="223" width="6" height="6" class="hole"/>
+<rect x="349" y="223" width="6" height="6" class="hole"/>
+<rect x="369" y="223" width="6" height="6" class="hole"/>
+<rect x="389" y="223" width="6" height="6" class="hole"/>
+<text x="151" y="249.5" class="num">11</text>
+<text x="413" y="249.5" class="num">11</text>
+<rect x="103" y="243" width="6" height="6" class="hole"/>
+<rect x="125" y="243" width="6" height="6" class="hole"/>
+<rect x="433" y="243" width="6" height="6" class="hole"/>
+<rect x="455" y="243" width="6" height="6" class="hole"/>
+<rect x="169" y="243" width="6" height="6" class="hole"/>
+<rect x="189" y="243" width="6" height="6" class="hole"/>
+<rect x="209" y="243" width="6" height="6" class="hole"/>
+<rect x="229" y="243" width="6" height="6" class="hole"/>
+<rect x="249" y="243" width="6" height="6" class="hole"/>
+<rect x="309" y="243" width="6" height="6" class="hole"/>
+<rect x="329" y="243" width="6" height="6" class="hole"/>
+<rect x="349" y="243" width="6" height="6" class="hole"/>
+<rect x="369" y="243" width="6" height="6" class="hole"/>
+<rect x="389" y="243" width="6" height="6" class="hole"/>
+<text x="151" y="269.5" class="num">12</text>
+<text x="413" y="269.5" class="num">12</text>
+<rect x="103" y="263" width="6" height="6" class="hole"/>
+<rect x="125" y="263" width="6" height="6" class="hole"/>
+<rect x="433" y="263" width="6" height="6" class="hole"/>
+<rect x="455" y="263" width="6" height="6" class="hole"/>
+<rect x="169" y="263" width="6" height="6" class="hole"/>
+<rect x="189" y="263" width="6" height="6" class="hole"/>
+<rect x="209" y="263" width="6" height="6" class="hole"/>
+<rect x="229" y="263" width="6" height="6" class="hole"/>
+<rect x="249" y="263" width="6" height="6" class="hole"/>
+<rect x="309" y="263" width="6" height="6" class="hole"/>
+<rect x="329" y="263" width="6" height="6" class="hole"/>
+<rect x="349" y="263" width="6" height="6" class="hole"/>
+<rect x="369" y="263" width="6" height="6" class="hole"/>
+<rect x="389" y="263" width="6" height="6" class="hole"/>
+<text x="151" y="289.5" class="num">13</text>
+<text x="413" y="289.5" class="num">13</text>
+<rect x="103" y="283" width="6" height="6" class="hole"/>
+<rect x="125" y="283" width="6" height="6" class="hole"/>
+<rect x="433" y="283" width="6" height="6" class="hole"/>
+<rect x="455" y="283" width="6" height="6" class="hole"/>
+<rect x="169" y="283" width="6" height="6" class="hole"/>
+<rect x="189" y="283" width="6" height="6" class="hole"/>
+<rect x="209" y="283" width="6" height="6" class="hole"/>
+<rect x="229" y="283" width="6" height="6" class="hole"/>
+<rect x="249" y="283" width="6" height="6" class="hole"/>
+<rect x="309" y="283" width="6" height="6" class="hole"/>
+<rect x="329" y="283" width="6" height="6" class="hole"/>
+<rect x="349" y="283" width="6" height="6" class="hole"/>
+<rect x="369" y="283" width="6" height="6" class="hole"/>
+<rect x="389" y="283" width="6" height="6" class="hole"/>
+<text x="151" y="309.5" class="num">14</text>
+<text x="413" y="309.5" class="num">14</text>
+<rect x="103" y="303" width="6" height="6" class="hole"/>
+<rect x="125" y="303" width="6" height="6" class="hole"/>
+<rect x="433" y="303" width="6" height="6" class="hole"/>
+<rect x="455" y="303" width="6" height="6" class="hole"/>
+<rect x="169" y="303" width="6" height="6" class="hole"/>
+<rect x="189" y="303" width="6" height="6" class="hole"/>
+<rect x="209" y="303" width="6" height="6" class="hole"/>
+<rect x="229" y="303" width="6" height="6" class="hole"/>
+<rect x="249" y="303" width="6" height="6" class="hole"/>
+<rect x="309" y="303" width="6" height="6" class="hole"/>
+<rect x="329" y="303" width="6" height="6" class="hole"/>
+<rect x="349" y="303" width="6" height="6" class="hole"/>
+<rect x="369" y="303" width="6" height="6" class="hole"/>
+<rect x="389" y="303" width="6" height="6" class="hole"/>
+<text x="151" y="329.5" class="num">15</text>
+<text x="413" y="329.5" class="num">15</text>
+<rect x="103" y="323" width="6" height="6" class="hole"/>
+<rect x="125" y="323" width="6" height="6" class="hole"/>
+<rect x="433" y="323" width="6" height="6" class="hole"/>
+<rect x="455" y="323" width="6" height="6" class="hole"/>
+<rect x="169" y="323" width="6" height="6" class="hole"/>
+<rect x="189" y="323" width="6" height="6" class="hole"/>
+<rect x="209" y="323" width="6" height="6" class="hole"/>
+<rect x="229" y="323" width="6" height="6" class="hole"/>
+<rect x="249" y="323" width="6" height="6" class="hole"/>
+<rect x="309" y="323" width="6" height="6" class="hole"/>
+<rect x="329" y="323" width="6" height="6" class="hole"/>
+<rect x="349" y="323" width="6" height="6" class="hole"/>
+<rect x="369" y="323" width="6" height="6" class="hole"/>
+<rect x="389" y="323" width="6" height="6" class="hole"/>
+<text x="151" y="349.5" class="num">16</text>
+<text x="413" y="349.5" class="num">16</text>
+<rect x="103" y="343" width="6" height="6" class="hole"/>
+<rect x="125" y="343" width="6" height="6" class="hole"/>
+<rect x="433" y="343" width="6" height="6" class="hole"/>
+<rect x="455" y="343" width="6" height="6" class="hole"/>
+<rect x="169" y="343" width="6" height="6" class="hole"/>
+<rect x="189" y="343" width="6" height="6" class="hole"/>
+<rect x="209" y="343" width="6" height="6" class="hole"/>
+<rect x="229" y="343" width="6" height="6" class="hole"/>
+<rect x="249" y="343" width="6" height="6" class="hole"/>
+<rect x="309" y="343" width="6" height="6" class="hole"/>
+<rect x="329" y="343" width="6" height="6" class="hole"/>
+<rect x="349" y="343" width="6" height="6" class="hole"/>
+<rect x="369" y="343" width="6" height="6" class="hole"/>
+<rect x="389" y="343" width="6" height="6" class="hole"/>
+<text x="151" y="369.5" class="num">17</text>
+<text x="413" y="369.5" class="num">17</text>
+<rect x="103" y="363" width="6" height="6" class="hole"/>
+<rect x="125" y="363" width="6" height="6" class="hole"/>
+<rect x="433" y="363" width="6" height="6" class="hole"/>
+<rect x="455" y="363" width="6" height="6" class="hole"/>
+<rect x="169" y="363" width="6" height="6" class="hole"/>
+<rect x="189" y="363" width="6" height="6" class="hole"/>
+<rect x="209" y="363" width="6" height="6" class="hole"/>
+<rect x="229" y="363" width="6" height="6" class="hole"/>
+<rect x="249" y="363" width="6" height="6" class="hole"/>
+<rect x="309" y="363" width="6" height="6" class="hole"/>
+<rect x="329" y="363" width="6" height="6" class="hole"/>
+<rect x="349" y="363" width="6" height="6" class="hole"/>
+<rect x="369" y="363" width="6" height="6" class="hole"/>
+<rect x="389" y="363" width="6" height="6" class="hole"/>
+<text x="151" y="389.5" class="num">18</text>
+<text x="413" y="389.5" class="num">18</text>
+<rect x="103" y="383" width="6" height="6" class="hole"/>
+<rect x="125" y="383" width="6" height="6" class="hole"/>
+<rect x="433" y="383" width="6" height="6" class="hole"/>
+<rect x="455" y="383" width="6" height="6" class="hole"/>
+<rect x="169" y="383" width="6" height="6" class="hole"/>
+<rect x="189" y="383" width="6" height="6" class="hole"/>
+<rect x="209" y="383" width="6" height="6" class="hole"/>
+<rect x="229" y="383" width="6" height="6" class="hole"/>
+<rect x="249" y="383" width="6" height="6" class="hole"/>
+<rect x="309" y="383" width="6" height="6" class="hole"/>
+<rect x="329" y="383" width="6" height="6" class="hole"/>
+<rect x="349" y="383" width="6" height="6" class="hole"/>
+<rect x="369" y="383" width="6" height="6" class="hole"/>
+<rect x="389" y="383" width="6" height="6" class="hole"/>
+<text x="151" y="409.5" class="num">19</text>
+<text x="413" y="409.5" class="num">19</text>
+<rect x="103" y="403" width="6" height="6" class="hole"/>
+<rect x="125" y="403" width="6" height="6" class="hole"/>
+<rect x="433" y="403" width="6" height="6" class="hole"/>
+<rect x="455" y="403" width="6" height="6" class="hole"/>
+<rect x="169" y="403" width="6" height="6" class="hole"/>
+<rect x="189" y="403" width="6" height="6" class="hole"/>
+<rect x="209" y="403" width="6" height="6" class="hole"/>
+<rect x="229" y="403" width="6" height="6" class="hole"/>
+<rect x="249" y="403" width="6" height="6" class="hole"/>
+<rect x="309" y="403" width="6" height="6" class="hole"/>
+<rect x="329" y="403" width="6" height="6" class="hole"/>
+<rect x="349" y="403" width="6" height="6" class="hole"/>
+<rect x="369" y="403" width="6" height="6" class="hole"/>
+<rect x="389" y="403" width="6" height="6" class="hole"/>
+<text x="151" y="429.5" class="num">20</text>
+<text x="413" y="429.5" class="num">20</text>
+<rect x="103" y="423" width="6" height="6" class="hole"/>
+<rect x="125" y="423" width="6" height="6" class="hole"/>
+<rect x="433" y="423" width="6" height="6" class="hole"/>
+<rect x="455" y="423" width="6" height="6" class="hole"/>
+<rect x="169" y="423" width="6" height="6" class="hole"/>
+<rect x="189" y="423" width="6" height="6" class="hole"/>
+<rect x="209" y="423" width="6" height="6" class="hole"/>
+<rect x="229" y="423" width="6" height="6" class="hole"/>
+<rect x="249" y="423" width="6" height="6" class="hole"/>
+<rect x="309" y="423" width="6" height="6" class="hole"/>
+<rect x="329" y="423" width="6" height="6" class="hole"/>
+<rect x="349" y="423" width="6" height="6" class="hole"/>
+<rect x="369" y="423" width="6" height="6" class="hole"/>
+<rect x="389" y="423" width="6" height="6" class="hole"/>
+<text x="151" y="449.5" class="num">21</text>
+<text x="413" y="449.5" class="num">21</text>
+<rect x="103" y="443" width="6" height="6" class="hole"/>
+<rect x="125" y="443" width="6" height="6" class="hole"/>
+<rect x="433" y="443" width="6" height="6" class="hole"/>
+<rect x="455" y="443" width="6" height="6" class="hole"/>
+<rect x="169" y="443" width="6" height="6" class="hole"/>
+<rect x="189" y="443" width="6" height="6" class="hole"/>
+<rect x="209" y="443" width="6" height="6" class="hole"/>
+<rect x="229" y="443" width="6" height="6" class="hole"/>
+<rect x="249" y="443" width="6" height="6" class="hole"/>
+<rect x="309" y="443" width="6" height="6" class="hole"/>
+<rect x="329" y="443" width="6" height="6" class="hole"/>
+<rect x="349" y="443" width="6" height="6" class="hole"/>
+<rect x="369" y="443" width="6" height="6" class="hole"/>
+<rect x="389" y="443" width="6" height="6" class="hole"/>
+<text x="151" y="469.5" class="num">22</text>
+<text x="413" y="469.5" class="num">22</text>
+<rect x="103" y="463" width="6" height="6" class="hole"/>
+<rect x="125" y="463" width="6" height="6" class="hole"/>
+<rect x="433" y="463" width="6" height="6" class="hole"/>
+<rect x="455" y="463" width="6" height="6" class="hole"/>
+<rect x="169" y="463" width="6" height="6" class="hole"/>
+<rect x="189" y="463" width="6" height="6" class="hole"/>
+<rect x="209" y="463" width="6" height="6" class="hole"/>
+<rect x="229" y="463" width="6" height="6" class="hole"/>
+<rect x="249" y="463" width="6" height="6" class="hole"/>
+<rect x="309" y="463" width="6" height="6" class="hole"/>
+<rect x="329" y="463" width="6" height="6" class="hole"/>
+<rect x="349" y="463" width="6" height="6" class="hole"/>
+<rect x="369" y="463" width="6" height="6" class="hole"/>
+<rect x="389" y="463" width="6" height="6" class="hole"/>
+<text x="151" y="489.5" class="num">23</text>
+<text x="413" y="489.5" class="num">23</text>
+<rect x="103" y="483" width="6" height="6" class="hole"/>
+<rect x="125" y="483" width="6" height="6" class="hole"/>
+<rect x="433" y="483" width="6" height="6" class="hole"/>
+<rect x="455" y="483" width="6" height="6" class="hole"/>
+<rect x="169" y="483" width="6" height="6" class="hole"/>
+<rect x="189" y="483" width="6" height="6" class="hole"/>
+<rect x="209" y="483" width="6" height="6" class="hole"/>
+<rect x="229" y="483" width="6" height="6" class="hole"/>
+<rect x="249" y="483" width="6" height="6" class="hole"/>
+<rect x="309" y="483" width="6" height="6" class="hole"/>
+<rect x="329" y="483" width="6" height="6" class="hole"/>
+<rect x="349" y="483" width="6" height="6" class="hole"/>
+<rect x="369" y="483" width="6" height="6" class="hole"/>
+<rect x="389" y="483" width="6" height="6" class="hole"/>
+<text x="151" y="509.5" class="num">24</text>
+<text x="413" y="509.5" class="num">24</text>
+<rect x="103" y="503" width="6" height="6" class="hole"/>
+<rect x="125" y="503" width="6" height="6" class="hole"/>
+<rect x="433" y="503" width="6" height="6" class="hole"/>
+<rect x="455" y="503" width="6" height="6" class="hole"/>
+<rect x="169" y="503" width="6" height="6" class="hole"/>
+<rect x="189" y="503" width="6" height="6" class="hole"/>
+<rect x="209" y="503" width="6" height="6" class="hole"/>
+<rect x="229" y="503" width="6" height="6" class="hole"/>
+<rect x="249" y="503" width="6" height="6" class="hole"/>
+<rect x="309" y="503" width="6" height="6" class="hole"/>
+<rect x="329" y="503" width="6" height="6" class="hole"/>
+<rect x="349" y="503" width="6" height="6" class="hole"/>
+<rect x="369" y="503" width="6" height="6" class="hole"/>
+<rect x="389" y="503" width="6" height="6" class="hole"/>
+<text x="151" y="529.5" class="num">25</text>
+<text x="413" y="529.5" class="num">25</text>
+<rect x="103" y="523" width="6" height="6" class="hole"/>
+<rect x="125" y="523" width="6" height="6" class="hole"/>
+<rect x="433" y="523" width="6" height="6" class="hole"/>
+<rect x="455" y="523" width="6" height="6" class="hole"/>
+<rect x="169" y="523" width="6" height="6" class="hole"/>
+<rect x="189" y="523" width="6" height="6" class="hole"/>
+<rect x="209" y="523" width="6" height="6" class="hole"/>
+<rect x="229" y="523" width="6" height="6" class="hole"/>
+<rect x="249" y="523" width="6" height="6" class="hole"/>
+<rect x="309" y="523" width="6" height="6" class="hole"/>
+<rect x="329" y="523" width="6" height="6" class="hole"/>
+<rect x="349" y="523" width="6" height="6" class="hole"/>
+<rect x="369" y="523" width="6" height="6" class="hole"/>
+<rect x="389" y="523" width="6" height="6" class="hole"/>
+<text x="151" y="549.5" class="num">26</text>
+<text x="413" y="549.5" class="num">26</text>
+<rect x="103" y="543" width="6" height="6" class="hole"/>
+<rect x="125" y="543" width="6" height="6" class="hole"/>
+<rect x="433" y="543" width="6" height="6" class="hole"/>
+<rect x="455" y="543" width="6" height="6" class="hole"/>
+<rect x="169" y="543" width="6" height="6" class="hole"/>
+<rect x="189" y="543" width="6" height="6" class="hole"/>
+<rect x="209" y="543" width="6" height="6" class="hole"/>
+<rect x="229" y="543" width="6" height="6" class="hole"/>
+<rect x="249" y="543" width="6" height="6" class="hole"/>
+<rect x="309" y="543" width="6" height="6" class="hole"/>
+<rect x="329" y="543" width="6" height="6" class="hole"/>
+<rect x="349" y="543" width="6" height="6" class="hole"/>
+<rect x="369" y="543" width="6" height="6" class="hole"/>
+<rect x="389" y="543" width="6" height="6" class="hole"/>
+<text x="151" y="569.5" class="num">27</text>
+<text x="413" y="569.5" class="num">27</text>
+<rect x="103" y="563" width="6" height="6" class="hole"/>
+<rect x="125" y="563" width="6" height="6" class="hole"/>
+<rect x="433" y="563" width="6" height="6" class="hole"/>
+<rect x="455" y="563" width="6" height="6" class="hole"/>
+<rect x="169" y="563" width="6" height="6" class="hole"/>
+<rect x="189" y="563" width="6" height="6" class="hole"/>
+<rect x="209" y="563" width="6" height="6" class="hole"/>
+<rect x="229" y="563" width="6" height="6" class="hole"/>
+<rect x="249" y="563" width="6" height="6" class="hole"/>
+<rect x="309" y="563" width="6" height="6" class="hole"/>
+<rect x="329" y="563" width="6" height="6" class="hole"/>
+<rect x="349" y="563" width="6" height="6" class="hole"/>
+<rect x="369" y="563" width="6" height="6" class="hole"/>
+<rect x="389" y="563" width="6" height="6" class="hole"/>
+<text x="151" y="589.5" class="num">28</text>
+<text x="413" y="589.5" class="num">28</text>
+<rect x="103" y="583" width="6" height="6" class="hole"/>
+<rect x="125" y="583" width="6" height="6" class="hole"/>
+<rect x="433" y="583" width="6" height="6" class="hole"/>
+<rect x="455" y="583" width="6" height="6" class="hole"/>
+<rect x="169" y="583" width="6" height="6" class="hole"/>
+<rect x="189" y="583" width="6" height="6" class="hole"/>
+<rect x="209" y="583" width="6" height="6" class="hole"/>
+<rect x="229" y="583" width="6" height="6" class="hole"/>
+<rect x="249" y="583" width="6" height="6" class="hole"/>
+<rect x="309" y="583" width="6" height="6" class="hole"/>
+<rect x="329" y="583" width="6" height="6" class="hole"/>
+<rect x="349" y="583" width="6" height="6" class="hole"/>
+<rect x="369" y="583" width="6" height="6" class="hole"/>
+<rect x="389" y="583" width="6" height="6" class="hole"/>
+<text x="151" y="609.5" class="num">29</text>
+<text x="413" y="609.5" class="num">29</text>
+<rect x="103" y="603" width="6" height="6" class="hole"/>
+<rect x="125" y="603" width="6" height="6" class="hole"/>
+<rect x="433" y="603" width="6" height="6" class="hole"/>
+<rect x="455" y="603" width="6" height="6" class="hole"/>
+<rect x="169" y="603" width="6" height="6" class="hole"/>
+<rect x="189" y="603" width="6" height="6" class="hole"/>
+<rect x="209" y="603" width="6" height="6" class="hole"/>
+<rect x="229" y="603" width="6" height="6" class="hole"/>
+<rect x="249" y="603" width="6" height="6" class="hole"/>
+<rect x="309" y="603" width="6" height="6" class="hole"/>
+<rect x="329" y="603" width="6" height="6" class="hole"/>
+<rect x="349" y="603" width="6" height="6" class="hole"/>
+<rect x="369" y="603" width="6" height="6" class="hole"/>
+<rect x="389" y="603" width="6" height="6" class="hole"/>
+<text x="151" y="629.5" class="num">30</text>
+<text x="413" y="629.5" class="num">30</text>
+<rect x="103" y="623" width="6" height="6" class="hole"/>
+<rect x="125" y="623" width="6" height="6" class="hole"/>
+<rect x="433" y="623" width="6" height="6" class="hole"/>
+<rect x="455" y="623" width="6" height="6" class="hole"/>
+<rect x="169" y="623" width="6" height="6" class="hole"/>
+<rect x="189" y="623" width="6" height="6" class="hole"/>
+<rect x="209" y="623" width="6" height="6" class="hole"/>
+<rect x="229" y="623" width="6" height="6" class="hole"/>
+<rect x="249" y="623" width="6" height="6" class="hole"/>
+<rect x="309" y="623" width="6" height="6" class="hole"/>
+<rect x="329" y="623" width="6" height="6" class="hole"/>
+<rect x="349" y="623" width="6" height="6" class="hole"/>
+<rect x="369" y="623" width="6" height="6" class="hole"/>
+<rect x="389" y="623" width="6" height="6" class="hole"/>
+<text x="151" y="649.5" class="num">31</text>
+<text x="413" y="649.5" class="num">31</text>
+<rect x="103" y="643" width="6" height="6" class="hole"/>
+<rect x="125" y="643" width="6" height="6" class="hole"/>
+<rect x="433" y="643" width="6" height="6" class="hole"/>
+<rect x="455" y="643" width="6" height="6" class="hole"/>
+<rect x="169" y="643" width="6" height="6" class="hole"/>
+<rect x="189" y="643" width="6" height="6" class="hole"/>
+<rect x="209" y="643" width="6" height="6" class="hole"/>
+<rect x="229" y="643" width="6" height="6" class="hole"/>
+<rect x="249" y="643" width="6" height="6" class="hole"/>
+<rect x="309" y="643" width="6" height="6" class="hole"/>
+<rect x="329" y="643" width="6" height="6" class="hole"/>
+<rect x="349" y="643" width="6" height="6" class="hole"/>
+<rect x="369" y="643" width="6" height="6" class="hole"/>
+<rect x="389" y="643" width="6" height="6" class="hole"/>
+<text x="151" y="669.5" class="num">32</text>
+<text x="413" y="669.5" class="num">32</text>
+<rect x="103" y="663" width="6" height="6" class="hole"/>
+<rect x="125" y="663" width="6" height="6" class="hole"/>
+<rect x="433" y="663" width="6" height="6" class="hole"/>
+<rect x="455" y="663" width="6" height="6" class="hole"/>
+<rect x="169" y="663" width="6" height="6" class="hole"/>
+<rect x="189" y="663" width="6" height="6" class="hole"/>
+<rect x="209" y="663" width="6" height="6" class="hole"/>
+<rect x="229" y="663" width="6" height="6" class="hole"/>
+<rect x="249" y="663" width="6" height="6" class="hole"/>
+<rect x="309" y="663" width="6" height="6" class="hole"/>
+<rect x="329" y="663" width="6" height="6" class="hole"/>
+<rect x="349" y="663" width="6" height="6" class="hole"/>
+<rect x="369" y="663" width="6" height="6" class="hole"/>
+<rect x="389" y="663" width="6" height="6" class="hole"/>
+<text x="172" y="24" class="lab">a</text>
+<text x="192" y="24" class="lab">b</text>
+<text x="212" y="24" class="lab">c</text>
+<text x="232" y="24" class="lab">d</text>
+<text x="252" y="24" class="lab">e</text>
+<text x="312" y="24" class="lab">f</text>
+<text x="332" y="24" class="lab">g</text>
+<text x="352" y="24" class="lab">h</text>
+<text x="372" y="24" class="lab">i</text>
+<text x="392" y="24" class="lab">j</text>
+<g class="part" data-part="R4">
+<circle cx="192" cy="66" r="7.5" class="ring"/>
+<circle cx="192" cy="146" r="7.5" class="ring"/>
+<line x1="192" y1="66" x2="192" y2="146" class="wireleg"/>
+<rect x="185.6" y="85" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="185.6" y="91.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="185.6" y="98.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="185.6" y="104.8" width="12.8" height="4" fill="#f2c40f"/>
+<rect x="185.6" y="116.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="192" cy="66" r="3.2" class="leg"/>
+<circle cx="192" cy="146" r="3.2" class="leg"/>
+<text x="203" y="109" class="tag">R4</text>
+</g>
+<g class="part" data-part="R5">
+<circle cx="232" cy="146" r="7.5" class="ring"/>
+<circle cx="232" cy="226" r="7.5" class="ring"/>
+<line x1="232" y1="146" x2="232" y2="226" class="wireleg"/>
+<rect x="225.6" y="165" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="225.6" y="171.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="225.6" y="178.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="225.6" y="184.8" width="12.8" height="4" fill="#f2c40f"/>
+<rect x="225.6" y="196.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="232" cy="146" r="3.2" class="leg"/>
+<circle cx="232" cy="226" r="3.2" class="leg"/>
+<text x="243" y="189" class="tag">R5</text>
+</g>
+<g class="part" data-part="C6">
+<circle cx="212" cy="186" r="7.5" class="ring"/>
+<circle cx="212" cy="226" r="7.5" class="ring"/>
+<path d="M212 186 L212 206 L212 226" class="wireleg" fill="none"/>
+<circle cx="212" cy="206" r="8.4" class="cbody"/>
+<text x="212" y="208.6" class="ctext">101</text>
+<circle cx="212" cy="186" r="3.2" class="leg"/>
+<circle cx="212" cy="226" r="3.2" class="leg"/>
+<text x="223" y="209" class="tag">C6</text>
+</g>
+<g class="part" data-part="R8">
+<circle cx="172" cy="266" r="7.5" class="ring"/>
+<circle cx="172" cy="186" r="7.5" class="ring"/>
+<line x1="172" y1="266" x2="172" y2="186" class="wireleg"/>
+<rect x="165.6" y="205" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="165.6" y="211.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="165.6" y="218.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="165.6" y="224.8" width="12.8" height="4" fill="#c62828"/>
+<rect x="165.6" y="236.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="172" cy="266" r="3.2" class="leg"/>
+<circle cx="172" cy="186" r="3.2" class="leg"/>
+<text x="183" y="229" class="tag">R8</text>
+</g>
+<g class="part" data-part="R6">
+<circle cx="192" cy="346" r="7.5" class="ring"/>
+<circle cx="192" cy="246" r="7.5" class="ring"/>
+<line x1="192" y1="346" x2="192" y2="246" class="wireleg"/>
+<rect x="185.6" y="275" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="185.6" y="281.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="185.6" y="288.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="185.6" y="294.8" width="12.8" height="4" fill="#ee7a12"/>
+<rect x="185.6" y="306.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="192" cy="346" r="3.2" class="leg"/>
+<circle cx="192" cy="246" r="3.2" class="leg"/>
+<text x="203" y="299" class="tag">R6</text>
+</g>
+<g class="part" data-part="R7">
+<circle cx="212" cy="266" r="7.5" class="ring"/>
+<circle cx="212" cy="346" r="7.5" class="ring"/>
+<line x1="212" y1="266" x2="212" y2="346" class="wireleg"/>
+<rect x="205.6" y="285" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="205.6" y="291.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="205.6" y="298.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="205.6" y="304.8" width="12.8" height="4" fill="#f2c40f"/>
+<rect x="205.6" y="316.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="212" cy="266" r="3.2" class="leg"/>
+<circle cx="212" cy="346" r="3.2" class="leg"/>
+<text x="223" y="309" class="tag">R7</text>
+</g>
+<g class="part" data-part="R3">
+<circle cx="172" cy="366" r="7.5" class="ring"/>
+<circle cx="172" cy="286" r="7.5" class="ring"/>
+<line x1="172" y1="366" x2="172" y2="286" class="wireleg"/>
+<rect x="165.6" y="305" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="165.6" y="311.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="165.6" y="318.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="165.6" y="324.8" width="12.8" height="4" fill="#f2c40f"/>
+<rect x="165.6" y="336.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="172" cy="366" r="3.2" class="leg"/>
+<circle cx="172" cy="286" r="3.2" class="leg"/>
+<text x="183" y="329" class="tag">R3</text>
+</g>
+<g class="part" data-part="C8">
+<circle cx="332" cy="326" r="7.5" class="ring"/>
+<circle cx="332" cy="306" r="7.5" class="ring"/>
+<path d="M332 326 L332 316 L332 306" class="wireleg" fill="none"/>
+<circle cx="332" cy="316" r="7.2" class="cbody"/>
+<text x="332" y="318.6" class="ctext">104</text>
+<circle cx="332" cy="326" r="3.2" class="leg"/>
+<circle cx="332" cy="306" r="3.2" class="leg"/>
+<text x="343" y="319" class="tag">C8</text>
+</g>
+<g class="part" data-part="C3">
+<circle cx="232" cy="406" r="7.5" class="ring"/>
+<circle cx="232" cy="366" r="7.5" class="ring"/>
+<path d="M232 406 L232 386 L232 366" class="wireleg" fill="none"/>
+<circle cx="232" cy="386" r="8.4" class="cbody"/>
+<text x="232" y="388.6" class="ctext">104</text>
+<circle cx="232" cy="406" r="3.2" class="leg"/>
+<circle cx="232" cy="366" r="3.2" class="leg"/>
+<text x="243" y="389" class="tag">C3</text>
+</g>
+<g class="part" data-part="R10">
+<circle cx="352" cy="486" r="7.5" class="ring"/>
+<circle cx="352" cy="406" r="7.5" class="ring"/>
+<line x1="352" y1="486" x2="352" y2="406" class="wireleg"/>
+<rect x="345.6" y="425" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="345.6" y="431.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="345.6" y="438.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="345.6" y="444.8" width="12.8" height="4" fill="#ee7a12"/>
+<rect x="345.6" y="456.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="352" cy="486" r="3.2" class="leg"/>
+<circle cx="352" cy="406" r="3.2" class="leg"/>
+<text x="363" y="449" class="tag">R10</text>
+</g>
+<g class="part" data-part="C7">
+<circle cx="372" cy="486" r="7.5" class="ring"/>
+<circle cx="372" cy="406" r="7.5" class="ring"/>
+<path d="M372 486 L372 446 L372 406" class="wireleg" fill="none"/>
+<circle cx="372" cy="446" r="8.4" class="cbody"/>
+<text x="372" y="448.6" class="ctext">104</text>
+<circle cx="372" cy="486" r="3.2" class="leg"/>
+<circle cx="372" cy="406" r="3.2" class="leg"/>
+<text x="383" y="449" class="tag">C7</text>
+</g>
+<g class="part" data-part="R2">
+<circle cx="192" cy="486" r="7.5" class="ring"/>
+<circle cx="192" cy="406" r="7.5" class="ring"/>
+<line x1="192" y1="486" x2="192" y2="406" class="wireleg"/>
+<rect x="185.6" y="425" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="185.6" y="431.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="185.6" y="438.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="185.6" y="444.8" width="12.8" height="4" fill="#f2c40f"/>
+<rect x="185.6" y="456.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="192" cy="486" r="3.2" class="leg"/>
+<circle cx="192" cy="406" r="3.2" class="leg"/>
+<text x="203" y="449" class="tag">R2</text>
+</g>
+<g class="part" data-part="C2">
+<circle cx="212" cy="486" r="7.5" class="ring"/>
+<circle cx="212" cy="466" r="7.5" class="ring"/>
+<path d="M212 486 L212 476 L212 466" class="wireleg" fill="none"/>
+<circle cx="212" cy="476" r="7.2" class="cbody"/>
+<text x="212" y="478.6" class="ctext">104</text>
+<circle cx="212" cy="486" r="3.2" class="leg"/>
+<circle cx="212" cy="466" r="3.2" class="leg"/>
+<text x="223" y="479" class="tag">C2</text>
+</g>
+<g class="part" data-part="R1">
+<circle cx="172" cy="566" r="7.5" class="ring"/>
+<circle cx="172" cy="486" r="7.5" class="ring"/>
+<line x1="172" y1="566" x2="172" y2="486" class="wireleg"/>
+<rect x="165.6" y="505" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="165.6" y="511.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="165.6" y="518.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="165.6" y="524.8" width="12.8" height="4" fill="#c62828"/>
+<rect x="165.6" y="536.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="172" cy="566" r="3.2" class="leg"/>
+<circle cx="172" cy="486" r="3.2" class="leg"/>
+<text x="183" y="529" class="tag">R1</text>
+</g>
+<g class="part" data-part="R9">
+<circle cx="332" cy="566" r="7.5" class="ring"/>
+<circle cx="332" cy="486" r="7.5" class="ring"/>
+<line x1="332" y1="566" x2="332" y2="486" class="wireleg"/>
+<rect x="325.6" y="505" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="325.6" y="511.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="325.6" y="518.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="325.6" y="524.8" width="12.8" height="4" fill="#f2c40f"/>
+<rect x="325.6" y="536.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="332" cy="566" r="3.2" class="leg"/>
+<circle cx="332" cy="486" r="3.2" class="leg"/>
+<text x="343" y="529" class="tag">R9</text>
+</g>
+<g class="part" data-part="R17">
+<circle cx="212" cy="566" r="7.5" class="ring"/>
+<circle cx="212" cy="626" r="7.5" class="ring"/>
+<line x1="212" y1="566" x2="212" y2="626" class="wireleg"/>
+<rect x="205.6" y="575" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="205.6" y="581.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="205.6" y="588.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="205.6" y="594.8" width="12.8" height="4" fill="#ee7a12"/>
+<rect x="205.6" y="606.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="212" cy="566" r="3.2" class="leg"/>
+<circle cx="212" cy="626" r="3.2" class="leg"/>
+<text x="223" y="599" class="tag">R17</text>
+</g>
+<g class="part" data-part="R16">
+<circle cx="232" cy="646" r="7.5" class="ring"/>
+<circle cx="232" cy="566" r="7.5" class="ring"/>
+<line x1="232" y1="646" x2="232" y2="566" class="wireleg"/>
+<rect x="225.6" y="585" width="12.8" height="42" rx="5" class="rbody"/>
+<rect x="225.6" y="591.4" width="12.8" height="4" fill="#7b4a21"/>
+<rect x="225.6" y="598.1" width="12.8" height="4" fill="#1b1b1b"/>
+<rect x="225.6" y="604.8" width="12.8" height="4" fill="#ee7a12"/>
+<rect x="225.6" y="616.6" width="12.8" height="4" fill="#c8a24a"/>
+<circle cx="232" cy="646" r="3.2" class="leg"/>
+<circle cx="232" cy="566" r="3.2" class="leg"/>
+<text x="243" y="609" class="tag">R16</text>
+</g>
+<g class="part" data-part="U1">
+<circle cx="252" cy="326" r="7.5" class="ring"/>
+<circle cx="252" cy="346" r="7.5" class="ring"/>
+<circle cx="252" cy="366" r="7.5" class="ring"/>
+<circle cx="252" cy="386" r="7.5" class="ring"/>
+<circle cx="312" cy="386" r="7.5" class="ring"/>
+<circle cx="312" cy="366" r="7.5" class="ring"/>
+<circle cx="312" cy="346" r="7.5" class="ring"/>
+<circle cx="312" cy="326" r="7.5" class="ring"/>
+<rect x="257" y="315" width="50" height="82" rx="3" class="chip"/>
+<path d="M275 315 A7 7 0 0 0 289 315 Z" class="notch"/>
+<circle cx="252" cy="326" r="3.2" class="legl"/>
+<text x="261" y="329.5" class="pin">1</text>
+<circle cx="252" cy="346" r="3.2" class="legl"/>
+<text x="261" y="349.5" class="pin">2</text>
+<circle cx="252" cy="366" r="3.2" class="legl"/>
+<text x="261" y="369.5" class="pin">3</text>
+<circle cx="252" cy="386" r="3.2" class="legl"/>
+<text x="261" y="389.5" class="pin">4</text>
+<circle cx="312" cy="386" r="3.2" class="legl"/>
+<text x="303" y="389.5" class="pin">5</text>
+<circle cx="312" cy="366" r="3.2" class="legl"/>
+<text x="303" y="369.5" class="pin">6</text>
+<circle cx="312" cy="346" r="3.2" class="legl"/>
+<text x="303" y="349.5" class="pin">7</text>
+<circle cx="312" cy="326" r="3.2" class="legl"/>
+<text x="303" y="329.5" class="pin">8</text>
+<text x="282" y="360" class="chipt">U1</text>
+</g>
+<g class="part" data-part="Q1">
+<circle cx="212" cy="406" r="7.5" class="ring"/>
+<circle cx="212" cy="426" r="7.5" class="ring"/>
+<circle cx="212" cy="446" r="7.5" class="ring"/>
+<path d="M203 395 L203 457 C233 457 233 395 203 395 Z" class="tbody"/>
+<circle cx="212" cy="406" r="3.2" class="legl"/>
+<text x="219" y="409.5" class="tleg">E</text>
+<circle cx="212" cy="426" r="3.2" class="legl"/>
+<text x="219" y="429.5" class="tleg">B</text>
+<circle cx="212" cy="446" r="3.2" class="legl"/>
+<text x="219" y="449.5" class="tleg">C</text>
+<text x="198" y="429" class="tag tend">Q1</text>
+</g>
+<g class="part" data-part="C4">
+<circle cx="252" cy="146" r="7.5" class="ring"/>
+<circle cx="252" cy="166" r="7.5" class="ring"/>
+<circle cx="252" cy="156" r="17.2" class="ebody"/>
+<path d="M238.2 166.3 A17.2 17.2 0 0 0 265.8 166.3 Z" class="stripe"/>
+<circle cx="252" cy="146" r="3.2" class="leg"/>
+<circle cx="252" cy="166" r="3.2" class="leg"/>
+<text x="271.2" y="150" class="pm">+</text>
+<text x="272.2" y="159" class="tag" dx="8">C4</text>
+</g>
+<g class="part" data-part="C5">
+<circle cx="252" cy="246" r="7.5" class="ring"/>
+<circle cx="252" cy="226" r="7.5" class="ring"/>
+<circle cx="252" cy="236" r="17.2" class="ebody"/>
+<path d="M238.2 225.7 A17.2 17.2 0 0 1 265.8 225.7 Z" class="stripe"/>
+<circle cx="252" cy="246" r="3.2" class="leg"/>
+<circle cx="252" cy="226" r="3.2" class="leg"/>
+<text x="271.2" y="250" class="pm">+</text>
+<text x="272.2" y="239" class="tag" dx="8">C5</text>
+</g>
+<g class="part" data-part="C9">
+<circle cx="352" cy="326" r="7.5" class="ring"/>
+<circle cx="352" cy="306" r="7.5" class="ring"/>
+<circle cx="352" cy="316" r="17.2" class="ebody"/>
+<path d="M338.2 305.7 A17.2 17.2 0 0 1 365.8 305.7 Z" class="stripe"/>
+<circle cx="352" cy="326" r="3.2" class="leg"/>
+<circle cx="352" cy="306" r="3.2" class="leg"/>
+<text x="371.2" y="330" class="pm">+</text>
+<text x="372.2" y="319" class="tag" dx="8">C9</text>
+</g>
+<g class="part" data-part="C1">
+<circle cx="252" cy="486" r="7.5" class="ring"/>
+<circle cx="252" cy="466" r="7.5" class="ring"/>
+<circle cx="252" cy="476" r="24" class="ebody"/>
+<path d="M232.8 461.6 A24 24 0 0 1 271.2 461.6 Z" class="stripe"/>
+<circle cx="252" cy="486" r="3.2" class="leg"/>
+<circle cx="252" cy="466" r="3.2" class="leg"/>
+<text x="278" y="490" class="pm">+</text>
+<text x="279" y="479" class="tag" dx="8">C1</text>
+</g>
+<g class="part" data-part="W1">
+<circle cx="172" cy="146" r="7.5" class="ring"/>
+<circle cx="252" cy="286" r="7.5" class="ring"/>
+<path d="M172 146 Q220 208 252 286" class="wo"/><path d="M172 146 Q220 208 252 286" class="w" stroke="#1d4e89"/>
+<circle cx="172" cy="146" r="3.2" class="end"/>
+<circle cx="252" cy="286" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W2">
+<circle cx="172" cy="166" r="7.5" class="ring"/>
+<circle cx="106" cy="166" r="7.5" class="ring"/>
+<path d="M172 166 Q139 148 106 166" class="wo"/><path d="M172 166 Q139 148 106 166" class="w" stroke="#222222"/>
+<circle cx="172" cy="166" r="3.2" class="end"/>
+<circle cx="106" cy="166" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W3">
+<circle cx="192" cy="226" r="7.5" class="ring"/>
+<circle cx="106" cy="226" r="7.5" class="ring"/>
+<path d="M192 226 Q149 208 106 226" class="wo"/><path d="M192 226 Q149 208 106 226" class="w" stroke="#222222"/>
+<circle cx="192" cy="226" r="3.2" class="end"/>
+<circle cx="106" cy="226" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W4">
+<circle cx="232" cy="266" r="7.5" class="ring"/>
+<circle cx="232" cy="326" r="7.5" class="ring"/>
+<path d="M232 266 Q250 296 232 326" class="wo"/><path d="M232 266 Q250 296 232 326" class="w" stroke="#2a9d8f"/>
+<circle cx="232" cy="266" r="3.2" class="end"/>
+<circle cx="232" cy="326" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W5">
+<circle cx="392" cy="306" r="7.5" class="ring"/>
+<circle cx="458" cy="566" r="7.5" class="ring"/>
+<path d="M392 306 Q433 428 458 566" class="wo"/><path d="M392 306 Q433 428 458 566" class="w" stroke="#222222"/>
+<circle cx="392" cy="306" r="3.2" class="end"/>
+<circle cx="458" cy="566" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W6">
+<circle cx="392" cy="326" r="7.5" class="ring"/>
+<circle cx="436" cy="326" r="7.5" class="ring"/>
+<path d="M392 326 Q414 308 436 326" class="wo"/><path d="M392 326 Q414 308 436 326" class="w" stroke="#d62828"/>
+<circle cx="392" cy="326" r="3.2" class="end"/>
+<circle cx="436" cy="326" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W7">
+<circle cx="332" cy="346" r="7.5" class="ring"/>
+<circle cx="332" cy="366" r="7.5" class="ring"/>
+<path d="M332 346 Q350 356 332 366" class="wo"/><path d="M332 346 Q350 356 332 366" class="w" stroke="#6c757d"/>
+<circle cx="332" cy="346" r="3.2" class="end"/>
+<circle cx="332" cy="366" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W8">
+<circle cx="172" cy="386" r="7.5" class="ring"/>
+<circle cx="106" cy="386" r="7.5" class="ring"/>
+<path d="M172 386 Q139 368 106 386" class="wo"/><path d="M172 386 Q139 368 106 386" class="w" stroke="#222222"/>
+<circle cx="172" cy="386" r="3.2" class="end"/>
+<circle cx="106" cy="386" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W9">
+<circle cx="332" cy="386" r="7.5" class="ring"/>
+<circle cx="332" cy="406" r="7.5" class="ring"/>
+<path d="M332 386 Q350 396 332 406" class="wo"/><path d="M332 386 Q350 396 332 406" class="w" stroke="#6c757d"/>
+<circle cx="332" cy="386" r="3.2" class="end"/>
+<circle cx="332" cy="406" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W10">
+<circle cx="392" cy="406" r="7.5" class="ring"/>
+<circle cx="458" cy="546" r="7.5" class="ring"/>
+<path d="M392 406 Q433 468 458 546" class="wo"/><path d="M392 406 Q433 468 458 546" class="w" stroke="#222222"/>
+<circle cx="392" cy="406" r="3.2" class="end"/>
+<circle cx="458" cy="546" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W11">
+<circle cx="172" cy="426" r="7.5" class="ring"/>
+<circle cx="106" cy="426" r="7.5" class="ring"/>
+<path d="M172 426 Q139 408 106 426" class="wo"/><path d="M172 426 Q139 408 106 426" class="w" stroke="#222222"/>
+<circle cx="172" cy="426" r="3.2" class="end"/>
+<circle cx="106" cy="426" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W12">
+<circle cx="172" cy="466" r="7.5" class="ring"/>
+<circle cx="106" cy="466" r="7.5" class="ring"/>
+<path d="M172 466 Q139 448 106 466" class="wo"/><path d="M172 466 Q139 448 106 466" class="w" stroke="#222222"/>
+<circle cx="172" cy="466" r="3.2" class="end"/>
+<circle cx="106" cy="466" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W13">
+<circle cx="252" cy="566" r="7.5" class="ring"/>
+<circle cx="312" cy="566" r="7.5" class="ring"/>
+<path d="M252 566 Q282 548 312 566" class="wo"/><path d="M252 566 Q282 548 312 566" class="w" stroke="#f77f00"/>
+<circle cx="252" cy="566" r="3.2" class="end"/>
+<circle cx="312" cy="566" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W14">
+<circle cx="128" cy="626" r="7.5" class="ring"/>
+<circle cx="436" cy="626" r="7.5" class="ring"/>
+<path d="M128 626 Q282 608 436 626" class="wo"/><path d="M128 626 Q282 608 436 626" class="w" stroke="#d62828"/>
+<circle cx="128" cy="626" r="3.2" class="end"/>
+<circle cx="436" cy="626" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W15">
+<circle cx="106" cy="626" r="7.5" class="ring"/>
+<circle cx="458" cy="626" r="7.5" class="ring"/>
+<path d="M106 626 Q282 608 458 626" class="wo"/><path d="M106 626 Q282 608 458 626" class="w" stroke="#222222"/>
+<circle cx="106" cy="626" r="3.2" class="end"/>
+<circle cx="458" cy="626" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W16">
+<circle cx="128" cy="606" r="7.5" class="ring"/>
+<path d="M128 606 C118 606 118 607 108 607" class="wo"/><path d="M128 606 C118 606 118 607 108 607" class="w" stroke="#d62828"/>
+<rect x="8" y="598" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="611" class="flagt">Boost VIN+</text>
+<circle cx="128" cy="606" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W17">
+<circle cx="106" cy="606" r="7.5" class="ring"/>
+<path d="M106 606 C107 606 107 628 108 628" class="wo"/><path d="M106 606 C107 606 107 628 108 628" class="w" stroke="#222222"/>
+<rect x="8" y="619" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="632" class="flagt">Boost VIN−</text>
+<circle cx="106" cy="606" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W18">
+<circle cx="106" cy="586" r="7.5" class="ring"/>
+<path d="M106 586 C107 586 107 586 108 586" class="wo"/><path d="M106 586 C107 586 107 586 108 586" class="w" stroke="#222222"/>
+<rect x="8" y="577" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="590" class="flagt">Boost VOUT−</text>
+<circle cx="106" cy="586" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W19">
+<circle cx="172" cy="646" r="7.5" class="ring"/>
+<path d="M172 646 C140 646 140 649 108 649" class="wo"/><path d="M172 646 C140 646 140 649 108 649" class="w" stroke="#f77f00"/>
+<rect x="8" y="640" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="653" class="flagt">Boost VOUT+</text>
+<circle cx="172" cy="646" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W20">
+<circle cx="128" cy="46" r="7.5" class="ring"/>
+<path d="M128 46 C118 46 118 46 108 46" class="wo"/><path d="M128 46 C118 46 118 46 108 46" class="w" stroke="#d62828"/>
+<rect x="8" y="37" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="50" class="flagt">DevEBox 5V</text>
+<circle cx="128" cy="46" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W21">
+<circle cx="106" cy="46" r="7.5" class="ring"/>
+<path d="M106 46 C107 46 107 67 108 67" class="wo"/><path d="M106 46 C107 46 107 67 108 67" class="w" stroke="#222222"/>
+<rect x="8" y="58" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="71" class="flagt">DevEBox GND</text>
+<circle cx="106" cy="46" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W22">
+<circle cx="172" cy="66" r="7.5" class="ring"/>
+<path d="M172 66 C140 66 140 88 108 88" class="wo"/><path d="M172 66 C140 66 140 88 108 88" class="w" stroke="#7b2cbf"/>
+<rect x="8" y="79" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="92" class="flagt">DevEBox 3V3</text>
+<circle cx="172" cy="66" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W23">
+<circle cx="192" cy="186" r="7.5" class="ring"/>
+<path d="M192 186 C150 186 150 186 108 186" class="wo"/><path d="M192 186 C150 186 150 186 108 186" class="w" stroke="#9aa0a6"/>
+<rect x="8" y="177" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="190" class="flagt">DevEBox PA4</text>
+<circle cx="192" cy="186" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W24">
+<circle cx="392" cy="486" r="7.5" class="ring"/>
+<path d="M392 486 C435 486 435 486 478 486" class="wo"/><path d="M392 486 C435 486 435 486 478 486" class="w" stroke="#d4a017"/>
+<rect x="478" y="477" width="100" height="18" rx="9" class="flag"/>
+<text x="528" y="490" class="flagt">DevEBox PB0</text>
+<circle cx="392" cy="486" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W25">
+<circle cx="172" cy="626" r="7.5" class="ring"/>
+<circle cx="106" cy="646" r="7.5" class="ring"/>
+<path d="M172 626 Q147 628 106 646" class="wo"/><path d="M172 626 Q147 628 106 646" class="w" stroke="#222222"/>
+<circle cx="172" cy="626" r="3.2" class="end"/>
+<circle cx="106" cy="646" r="3.2" class="end"/>
+</g>
+<g class="part" data-part="W26">
+<circle cx="106" cy="666" r="7.5" class="ring"/>
+<path d="M106 666 C107 666 107 670 108 670" class="wo"/><path d="M106 666 C107 666 107 670 108 670" class="w" stroke="#222222"/>
+<rect x="8" y="661" width="100" height="18" rx="9" class="flag"/>
+<text x="58" y="674" class="flagt">DevEBox GND</text>
+<circle cx="106" cy="666" r="3.2" class="end"/>
+</g>
+<g id="probes"></g>
+</svg></section>
+  <nav class="list" id="list" aria-label="All steps"></nav>
+</main>
+<script>
+const STEPS = [{"stage": "Before You Start", "title": "Get the Bench Ready", "parts": [], "probes": [], "html": "<ul><li>Unplug every USB cable. Unplug again before every change to the board, however small.</li><li>Unplug the laptop charger. It adds mains hum to the noise.</li><li>Turn the new breadboard so row 1 is at the top and the letters a to j read from left to right. Find the red (+) and blue (−) strip on each side. If your board has them the other way round, follow the colours, not the drawing.</li><li>We use rows 1 to 32. If a strip's coloured line has a gap part-way down, the strip is split there; W26 joins the left blue strip's two pieces, and the beep checks prove the rest.</li><li>Board B (OLED and ATECC608) stays as it is, still wired to the DevEBox.</li><li>The CP2102 stays wired TXD to PA10, RXD to PA9 and GND to GND. Its 5V wire stays disconnected.</li></ul><p>Lay these out first:</p><ul class=\"kit\"><li>100 kΩ resistors: 6</li><li>ceramic 101: 1</li><li>1 kΩ resistors: 2</li><li>10 kΩ resistors: 4</li><li>ceramic 104: 4</li><li>LM358: 1</li><li>2N3904 (bring the spares): 1</li><li>10 µF electrolytic: 3</li><li>100 µF electrolytic: 1</li><li>short jumper wires: 16</li><li>female-to-male wires for the DevEBox: 5</li></ul>", "n": 1}, {"stage": "Flat Parts, Top to Bottom", "title": "R4 100 kΩ Resistor", "html": "<p>Bands brown, black, yellow, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column b with one leg in <b class=\"hl\">2b</b> and the other in <b class=\"hl\">6b</b>, pressed against the board.</p>", "parts": ["R4"], "probes": [], "n": 2}, {"stage": "Flat Parts, Top to Bottom", "title": "R5 100 kΩ Resistor", "html": "<p>Bands brown, black, yellow, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column d with one leg in <b class=\"hl\">6d</b> and the other in <b class=\"hl\">10d</b>, pressed against the board.</p>", "parts": ["R5"], "probes": [], "n": 3}, {"stage": "Flat Parts, Top to Bottom", "title": "C6 Ceramic Capacitor 101", "html": "<p>The small disc printed <b>101</b>. Legs in <b class=\"hl\">8c</b> and <b class=\"hl\">10c</b>. The holes are two apart, which matches most of these capacitors as they come.</p>", "parts": ["C6"], "probes": [], "n": 4}, {"stage": "Flat Parts, Top to Bottom", "title": "R8 1 kΩ Resistor", "html": "<p>Bands brown, black, red, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column a with one leg in <b class=\"hl\">8a</b> and the other in <b class=\"hl\">12a</b>, pressed against the board.</p>", "parts": ["R8"], "probes": [], "n": 5}, {"stage": "Flat Parts, Top to Bottom", "title": "R6 10 kΩ Resistor", "html": "<p>Bands brown, black, orange, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column b with one leg in <b class=\"hl\">11b</b> and the other in <b class=\"hl\">16b</b>, pressed against the board.</p>", "parts": ["R6"], "probes": [], "n": 6}, {"stage": "Flat Parts, Top to Bottom", "title": "R7 100 kΩ Resistor", "html": "<p>Bands brown, black, yellow, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column c with one leg in <b class=\"hl\">12c</b> and the other in <b class=\"hl\">16c</b>, pressed against the board.</p>", "parts": ["R7"], "probes": [], "n": 7}, {"stage": "Flat Parts, Top to Bottom", "title": "R3 100 kΩ Resistor", "html": "<p>Bands brown, black, yellow, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column a with one leg in <b class=\"hl\">13a</b> and the other in <b class=\"hl\">17a</b>, pressed against the board.</p>", "parts": ["R3"], "probes": [], "n": 8}, {"stage": "Flat Parts, Top to Bottom", "title": "C8 Ceramic Capacitor 104", "html": "<p>The small disc printed <b>104</b>. Legs in <b class=\"hl\">14g</b> and <b class=\"hl\">15g</b>. The holes are side by side, so pinch the legs together if they sit wider apart.</p>", "parts": ["C8"], "probes": [], "n": 9}, {"stage": "Flat Parts, Top to Bottom", "title": "C3 Ceramic Capacitor 104", "html": "<p>The small disc printed <b>104</b>. Legs in <b class=\"hl\">17d</b> and <b class=\"hl\">19d</b>. The holes are two apart, which matches most of these capacitors as they come.</p>", "parts": ["C3"], "probes": [], "n": 10}, {"stage": "Flat Parts, Top to Bottom", "title": "R10 10 kΩ Resistor", "html": "<p>Bands brown, black, orange, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column h with one leg in <b class=\"hl\">19h</b> and the other in <b class=\"hl\">23h</b>, pressed against the board.</p>", "parts": ["R10"], "probes": [], "n": 11}, {"stage": "Flat Parts, Top to Bottom", "title": "C7 Ceramic Capacitor 104", "html": "<p>The small disc printed <b>104</b>. Legs in <b class=\"hl\">19i</b> and <b class=\"hl\">23i</b>. Spread the legs to reach; they are long enough.</p>", "parts": ["C7"], "probes": [], "n": 12}, {"stage": "Flat Parts, Top to Bottom", "title": "R2 100 kΩ Resistor", "html": "<p>Bands brown, black, yellow, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column b with one leg in <b class=\"hl\">19b</b> and the other in <b class=\"hl\">23b</b>, pressed against the board.</p>", "parts": ["R2"], "probes": [], "n": 13}, {"stage": "Flat Parts, Top to Bottom", "title": "C2 Ceramic Capacitor 104", "html": "<p>The small disc printed <b>104</b>. Legs in <b class=\"hl\">22c</b> and <b class=\"hl\">23c</b>. The holes are side by side, so pinch the legs together if they sit wider apart.</p>", "parts": ["C2"], "probes": [], "n": 14}, {"stage": "Flat Parts, Top to Bottom", "title": "R1 1 kΩ Resistor", "html": "<p>Bands brown, black, red, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column a with one leg in <b class=\"hl\">23a</b> and the other in <b class=\"hl\">27a</b>, pressed against the board.</p>", "parts": ["R1"], "probes": [], "n": 15}, {"stage": "Flat Parts, Top to Bottom", "title": "R9 100 kΩ Resistor", "html": "<p>Bands brown, black, yellow, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column g with one leg in <b class=\"hl\">23g</b> and the other in <b class=\"hl\">27g</b>, pressed against the board.</p>", "parts": ["R9"], "probes": [], "n": 16}, {"stage": "Flat Parts, Top to Bottom", "title": "R17 10 kΩ Resistor", "html": "<p>Bands brown, black, orange, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column c with one leg in <b class=\"hl\">27c</b> and the other in <b class=\"hl\">30c</b>, pressed against the board.</p>", "parts": ["R17"], "probes": [], "n": 17}, {"stage": "Flat Parts, Top to Bottom", "title": "R16 10 kΩ Resistor", "html": "<p>Bands brown, black, orange, gold, read from either end.</p><p>Bend both legs down right at the body. Lay it flat along column d with one leg in <b class=\"hl\">27d</b> and the other in <b class=\"hl\">31d</b>, pressed against the board.</p>", "parts": ["R16"], "probes": [], "n": 18}, {"stage": "The Chip and the Transistor", "title": "U1 LM358 Op-Amp", "html": "<p>The notch (or dot) points to row 1. The chip sits across the middle groove: pin 1 in <b class=\"hl\">15e</b>, pins 1 to 4 down column e to <b class=\"hl\">18e</b>, and pins 5 to 8 up column f from <b class=\"hl\">18f</b> to <b class=\"hl\">15f</b>.</p><p>Line all eight legs up over their holes before you press, then check that no leg folded under.</p>", "parts": ["U1"], "probes": [], "n": 19}, {"stage": "The Chip and the Transistor", "title": "Q1 2N3904 Transistor", "html": "<p>Hold it with the flat face toward the left strips and the legs straight down. E (emitter) in <b class=\"hl\">19c</b>, B (base) in <b class=\"hl\">20c</b>, C (collector) in <b class=\"hl\">21c</b>.</p><p>Push it down so the legs are short. No extension wires on it: long wires here pick up mains hum. This is the noise source; you will check it later by measuring row 19.</p>", "parts": ["Q1"], "probes": [], "n": 20}, {"stage": "Electrolytic Capacitors", "title": "C4 10 µF Capacitor", "html": "<p>10 µF electrolytic. The long leg is plus (+) and goes in <b class=\"hl\">6e</b>. The short leg, on the side with the stripe, goes in <b class=\"hl\">7e</b>. It stands upright.</p><p>Getting this one the right way round matters: a reversed electrolytic shorts the supply.</p>", "parts": ["C4"], "probes": [], "n": 21}, {"stage": "Electrolytic Capacitors", "title": "C5 10 µF Capacitor", "html": "<p>10 µF electrolytic. The long leg is plus (+) and goes in <b class=\"hl\">11e</b>. The short leg, on the side with the stripe, goes in <b class=\"hl\">10e</b>. It stands upright.</p><p>Getting this one the right way round matters: a reversed electrolytic shorts the supply.</p>", "parts": ["C5"], "probes": [], "n": 22}, {"stage": "Electrolytic Capacitors", "title": "C9 10 µF Capacitor", "html": "<p>10 µF electrolytic. The long leg is plus (+) and goes in <b class=\"hl\">15h</b>. The short leg, on the side with the stripe, goes in <b class=\"hl\">14h</b>. It stands upright.</p><p>Getting this one the right way round matters: a reversed electrolytic shorts the supply.</p>", "parts": ["C9"], "probes": [], "n": 23}, {"stage": "Electrolytic Capacitors", "title": "C1 100 µF Capacitor", "html": "<p>100 µF electrolytic. The long leg is plus (+) and goes in <b class=\"hl\">23e</b>. The short leg, on the side with the stripe, goes in <b class=\"hl\">22e</b>. It stands upright.</p><p>Getting this one the right way round matters: a reversed electrolytic shorts the supply.</p>", "parts": ["C1"], "probes": [], "n": 24}, {"stage": "Short Wires on the Board", "title": "W1 Blue Wire, 6a to 13e", "html": "<p>A blue wire from <b class=\"hl\">6a</b> to <b class=\"hl\">13e</b>. It carries the 1.65 V reference from row 6 down to row 13.</p>", "parts": ["W1"], "probes": [], "n": 25}, {"stage": "Short Wires on the Board", "title": "W2 Black Wire, 7a to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">7a</b> to the left blue (−) strip beside row 7.</p>", "parts": ["W2"], "probes": [], "n": 26}, {"stage": "Short Wires on the Board", "title": "W3 Black Wire, 10b to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">10b</b> to the left blue (−) strip beside row 10.</p>", "parts": ["W3"], "probes": [], "n": 27}, {"stage": "Short Wires on the Board", "title": "W4 Green Wire, 12d to 15d", "html": "<p>A green wire from <b class=\"hl\">12d</b> to <b class=\"hl\">15d</b>. It joins the op-amp's output in row 15 to row 12.</p>", "parts": ["W4"], "probes": [], "n": 28}, {"stage": "Short Wires on the Board", "title": "W5 Black Wire, 14j to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">14j</b> to the right blue (−) strip beside row 27.</p>", "parts": ["W5"], "probes": [], "n": 29}, {"stage": "Short Wires on the Board", "title": "W6 Red Wire, 15j to Red Strip", "html": "<p>A red wire from <b class=\"hl\">15j</b> to the right red (+) strip beside row 15. This powers the chip.</p>", "parts": ["W6"], "probes": [], "n": 30}, {"stage": "Short Wires on the Board", "title": "W7 Gray Wire, 16g to 17g", "html": "<p>A gray wire from <b class=\"hl\">16g</b> to <b class=\"hl\">17g</b>. Together with W9 it parks the chip's unused half.</p>", "parts": ["W7"], "probes": [], "n": 31}, {"stage": "Short Wires on the Board", "title": "W8 Black Wire, 18a to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">18a</b> to the left blue (−) strip beside row 18. This grounds the chip.</p>", "parts": ["W8"], "probes": [], "n": 32}, {"stage": "Short Wires on the Board", "title": "W9 Gray Wire, 18g to 19g", "html": "<p>A gray wire from <b class=\"hl\">18g</b> to <b class=\"hl\">19g</b>. Row 19 on the right is ground, so this grounds pin 5.</p>", "parts": ["W9"], "probes": [], "n": 33}, {"stage": "Short Wires on the Board", "title": "W10 Black Wire, 19j to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">19j</b> to the right blue (−) strip beside row 26.</p>", "parts": ["W10"], "probes": [], "n": 34}, {"stage": "Short Wires on the Board", "title": "W11 Black Wire, 20a to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">20a</b> to the left blue (−) strip beside row 20. This grounds the transistor's base.</p>", "parts": ["W11"], "probes": [], "n": 35}, {"stage": "Short Wires on the Board", "title": "W12 Black Wire, 22a to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">22a</b> to the left blue (−) strip beside row 22.</p>", "parts": ["W12"], "probes": [], "n": 36}, {"stage": "Short Wires on the Board", "title": "W13 Orange Wire, 27e to 27f", "html": "<p>A orange wire from <b class=\"hl\">27e</b> to <b class=\"hl\">27f</b>. It takes the bias supply across the groove to the monitor resistor R9.</p>", "parts": ["W13"], "probes": [], "n": 37}, {"stage": "Short Wires on the Board", "title": "W14 Red Strip Link", "html": "<p>A red wire from the left red (+) strip beside row 30 to the right red (+) strip beside row 30. The two red strips are now one 5 V supply.</p>", "parts": ["W14"], "probes": [], "n": 38}, {"stage": "Short Wires on the Board", "title": "W15 Black Strip Link", "html": "<p>A black wire from the left blue (−) strip beside row 30 to the right blue (−) strip beside row 30. The two blue strips are now one ground.</p>", "parts": ["W15"], "probes": [], "n": 39}, {"stage": "Boost Module Wires", "title": "W16 Boost VIN+", "html": "<p>Plug the boost module's VIN+ wire into the left red (+) strip beside row 29.</p>", "parts": ["W16"], "probes": [], "n": 40}, {"stage": "Boost Module Wires", "title": "W17 Boost VIN−", "html": "<p>Plug the boost module's VIN− wire into the left blue (−) strip beside row 29.</p>", "parts": ["W17"], "probes": [], "n": 41}, {"stage": "Boost Module Wires", "title": "W18 Boost VOUT−", "html": "<p>Plug the boost module's VOUT− wire into the left blue (−) strip beside row 28.</p>", "parts": ["W18"], "probes": [], "n": 42}, {"stage": "Boost Module Wires", "title": "W19 Boost VOUT+", "html": "<p>Plug the boost module's VOUT+ wire into <b class=\"hl\">31a</b>. This is the raw boost output; R16 and R17 halve it for row 27.</p>", "parts": ["W19"], "probes": [], "n": 43}, {"stage": "DevEBox Wires", "title": "W20 DevEBox 5V", "html": "<p>A female-to-male wire from the DevEBox's 5V pin to the left red (+) strip beside row 1.</p>", "parts": ["W20"], "probes": [], "n": 44}, {"stage": "DevEBox Wires", "title": "W21 DevEBox GND", "html": "<p>A female-to-male wire from the DevEBox's GND pin to the left blue (−) strip beside row 1.</p>", "parts": ["W21"], "probes": [], "n": 45}, {"stage": "DevEBox Wires", "title": "W22 DevEBox 3V3", "html": "<p>A female-to-male wire from the DevEBox's 3V3 pin to <b class=\"hl\">2a</b>. This feeds the 1.65 V reference.</p>", "parts": ["W22"], "probes": [], "n": 46}, {"stage": "DevEBox Wires", "title": "W23 DevEBox PA4", "html": "<p>A female-to-male wire from the DevEBox's PA4 pin to <b class=\"hl\">8b</b>. This carries the noise signal to the ADC.</p>", "parts": ["W23"], "probes": [], "n": 47}, {"stage": "DevEBox Wires", "title": "W24 DevEBox PB0", "html": "<p>A female-to-male wire from the DevEBox's PB0 pin to <b class=\"hl\">23j</b>. This lets the firmware watch the bias supply.</p>", "parts": ["W24"], "probes": [], "n": 48}, {"stage": "Short Wires on the Board", "title": "W25 Black Wire, 30a to Blue Strip", "html": "<p>A black wire from <b class=\"hl\">30a</b> to the left blue (−) strip beside row 31. This grounds R17, the lower half of the bias divider.</p>", "parts": ["W25"], "probes": [], "n": 49}, {"stage": "DevEBox Wires", "title": "W26 DevEBox GND", "html": "<p>A female-to-male wire from a second GND pin on the DevEBox to the left blue (−) strip beside row 32.</p>", "parts": ["W26"], "probes": [], "n": 50}, {"stage": "DevEBox Wires", "title": "Take One Photo", "parts": [], "probes": [], "html": "<p>Still unplugged: take one clear photo of the whole breadboard from straight above, in good light, with the DevEBox and the boost module in the picture.</p>", "n": 51}, {"stage": "Check with the Power Off", "title": "Left Red to Left Blue", "parts": [], "probes": [{"at": [128.0, 126], "c": "red"}, {"at": [106.0, 126], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on the left red (+) strip beside row 5, black probe on the left blue (−) strip beside row 5.</p><p><b>Expect</b> No steady beep. A beep here means 5 V is shorted to ground.</p>", "n": 52}, {"stage": "Check with the Power Off", "title": "Right Red to Right Blue", "parts": [], "probes": [{"at": [436.0, 126], "c": "red"}, {"at": [458.0, 126], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on the right red (+) strip beside row 5, black probe on the right blue (−) strip beside row 5.</p><p><b>Expect</b> No steady beep.</p>", "n": 53}, {"stage": "Check with the Power Off", "title": "Left Blue to Right Blue", "parts": [], "probes": [{"at": [458.0, 506], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on the right blue (−) strip beside row 24, black probe on the left blue (−) strip beside row 24.</p><p><b>Expect</b> Beep. This proves W15 joins the two grounds.</p>", "n": 54}, {"stage": "Check with the Power Off", "title": "Left Red to Right Red", "parts": [], "probes": [{"at": [436.0, 506], "c": "red"}, {"at": [128.0, 506], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on the right red (+) strip beside row 24, black probe on the left red (+) strip beside row 24.</p><p><b>Expect</b> Beep. This proves W14 joins the two 5 V strips.</p>", "n": 55}, {"stage": "Check with the Power Off", "title": "Left Blue, Top to Bottom", "parts": [], "probes": [{"at": [106.0, 66], "c": "red"}, {"at": [106.0, 666], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on the left blue (−) strip beside row 2, black probe on the left blue (−) strip beside row 32.</p><p><b>Expect</b> Beep. Some full-size boards split each strip part-way down; on this one W26 joins the two pieces of the left blue strip.</p>", "n": 56}, {"stage": "Check with the Power Off", "title": "Row 31 to Blue", "parts": [], "probes": [{"at": [192, 646], "c": "red"}, {"at": [106.0, 546], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on <b class=\"hl\">31b</b>, black probe on the left blue (−) strip beside row 26.</p><p><b>Expect</b> No beep. Row 31 is the raw boost output.</p>", "n": 57}, {"stage": "Check with the Power Off", "title": "Row 27 to Blue", "parts": [], "probes": [{"at": [192, 566], "c": "red"}, {"at": [106.0, 526], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on <b class=\"hl\">27b</b>, black probe on the left blue (−) strip beside row 25.</p><p><b>Expect</b> No steady beep. Row 27 is the bias supply. It reaches ground only through the 10 kΩ R17, which a meter does not beep for.</p>", "n": 58}, {"stage": "Check with the Power Off", "title": "Row 2 to Blue", "parts": [], "probes": [{"at": [212, 66], "c": "red"}, {"at": [106.0, 66], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on <b class=\"hl\">2c</b>, black probe on the left blue (−) strip beside row 2.</p><p><b>Expect</b> No beep. Row 2 is 3.3 V.</p>", "n": 59}, {"stage": "Check with the Power Off", "title": "Row 19 to Blue", "parts": [], "probes": [{"at": [172, 406], "c": "red"}, {"at": [106.0, 406], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on <b class=\"hl\">19a</b>, black probe on the left blue (−) strip beside row 19.</p><p><b>Expect</b> No steady beep. Row 19 is the transistor's emitter.</p>", "n": 60}, {"stage": "Check with the Power Off", "title": "Row 18 to Blue", "parts": [], "probes": [{"at": [192, 386], "c": "red"}, {"at": [106.0, 386], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on <b class=\"hl\">18b</b>, black probe on the left blue (−) strip beside row 18.</p><p><b>Expect</b> Beep. The chip's ground pin is connected.</p>", "n": 61}, {"stage": "Check with the Power Off", "title": "Row 6 to Row 13", "parts": [], "probes": [{"at": [212, 146], "c": "red"}, {"at": [232, 286], "c": "black"}], "html": "<p>Meter on the beep setting. Red probe on <b class=\"hl\">6c</b>, black probe on <b class=\"hl\">13d</b>.</p><p><b>Expect</b> Beep. This proves W1, the reference link.</p>", "n": 62}, {"stage": "Check with the Power Off", "title": "Send Checkpoint 1", "parts": [], "probes": [], "html": "<p>Send me the photo and say which checks, if any, did not match. Wait for my OK before plugging anything in.</p>", "n": 63}, {"stage": "Power On and Measure", "title": "Left Red Strip, 5 V", "parts": [], "probes": [{"at": [128.0, 146], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on the left red (+) strip beside row 6, black probe in the left blue strip.</p><p><b>Expect</b> 4.6 to 5.2 V. This is the DevEBox's 5 V. If it is near 0, unplug and check W20 and W21.</p>", "n": 64}, {"stage": "Power On and Measure", "title": "Row 31, Boost Output", "parts": [], "probes": [{"at": [192, 646], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">31b</b>, black probe in the left blue strip.</p><p><b>Expect</b> about 24 to 28 V. This is the raw MT3608 output. On this build neither of two modules would regulate below about 26 V whatever the trimmer did, which is why R16 and R17 halve it.</p>", "n": 65}, {"stage": "Power On and Measure", "title": "Row 27, Bias Supply", "parts": [], "probes": [{"at": [192, 566], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">27b</b>, black probe in the left blue strip.</p><p><b>Expect</b> about half of row 31, between 12 and 15 V. This is the supply for the transistor and the monitor. This build measured 13.9 V. The firmware accepts 9 to 20 V.</p>", "n": 66}, {"stage": "Power On and Measure", "title": "Row 23 Right, Monitor", "parts": [], "probes": [{"at": [312, 486], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">23f</b>, black probe in the left blue strip.</p><p><b>Expect</b> about one eleventh of row 27, near 1.3 V. This is the monitor that PB0 reads.</p>", "n": 67}, {"stage": "Power On and Measure", "title": "Row 2, 3.3 V", "parts": [], "probes": [{"at": [212, 66], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">2c</b>, black probe in the left blue strip.</p><p><b>Expect</b> 3.2 to 3.4 V. This is the DevEBox's 3.3 V.</p>", "n": 68}, {"stage": "Power On and Measure", "title": "Row 6, Reference", "parts": [], "probes": [{"at": [212, 146], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">6c</b>, black probe in the left blue strip.</p><p><b>Expect</b> 1.6 to 1.7 V. This is the reference, half of 3.3 V.</p>", "n": 69}, {"stage": "Power On and Measure", "title": "Row 17, Op-Amp Input", "parts": [], "probes": [{"at": [192, 366], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">17b</b>, black probe in the left blue strip.</p><p><b>Expect</b> the same as row 6. This is the op-amp's input, held at the reference by R3.</p>", "n": 70}, {"stage": "Power On and Measure", "title": "Row 12, Op-Amp Output", "parts": [], "probes": [{"at": [252, 266], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">12e</b>, black probe in the left blue strip.</p><p><b>Expect</b> 1.5 to 1.8 V. This is the op-amp's output.</p>", "n": 71}, {"stage": "Power On and Measure", "title": "Row 8, Signal to PA4", "parts": [], "probes": [{"at": [252, 186], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">8e</b>, black probe in the left blue strip.</p><p><b>Expect</b> the same as row 12. This is the signal going to PA4.</p>", "n": 72}, {"stage": "Power On and Measure", "title": "Row 19, the Transistor", "parts": [], "probes": [{"at": [172, 406], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Meter on DC 20 V. Red probe on <b class=\"hl\">19a</b>, black probe in the left blue strip.</p><p><b>Expect</b> 7 to 9 V. This is the voltage where the transistor's junction breaks down and makes noise.</p><p>If row 19 reads below 6 V, this transistor breaks down too low to make good noise. Unplug the USB-C, swap in the next 2N3904 in the same holes and the same way round, plug in and measure again. Write down each reading. If every one reads below 6 V, use the zener in the next step.</p>", "n": 73}, {"stage": "Power On and Measure", "title": "Zener Backup", "parts": [], "probes": [{"at": [172, 406], "c": "red"}, {"at": [106.0, 506], "c": "black"}], "html": "<p>Unplug the USB-C first. Take Q1 out. Fold the 1N4739A's plain-end leg back down alongside its body so both legs point down side by side. Band end in <b class=\"hl\">19c</b>, plain end in <b class=\"hl\">20c</b>.</p><p>Plug in and measure row 19 again. <b>Expect</b> about 8 to 9.5 V.</p>", "n": 74}, {"stage": "Software Checks", "title": "Run Info", "parts": [], "probes": [], "html": "<p>In PowerShell, in D:\\zirah:</p><pre><code>.\\zirah info</code></pre><p><b>Expect</b> TRNG OK, and the line BOARD devebox noise=PA4 serial=PA9/PA10 hse_mhz=8.</p>", "n": 75}, {"stage": "Software Checks", "title": "Run Vbias", "parts": [], "probes": [], "html": "<p>In PowerShell, in D:\\zirah:</p><pre><code>.\\zirah vbias</code></pre><p><b>Expect</b> about 12 to 15 V. This build read 13.9 V.</p>", "n": 76}, {"stage": "Software Checks", "title": "Run Health", "parts": [], "probes": [], "html": "<p>In PowerShell, in D:\\zirah:</p><pre><code>.\\zirah health</code></pre><p><b>Expect</b> TRNG OK.</p>", "n": 77}, {"stage": "Software Checks", "title": "Run Analyze", "parts": [], "probes": [], "html": "<p>In PowerShell, in D:\\zirah:</p><pre><code>.\\zirah analyze</code></pre><p><b>Expect</b> MEAN near 2000 (1350 to 2750 passes the start-up check), STD about 20 or more, AUTOCORR1 below 0.4, CLIPPED 0. This build showed MEAN 2033, STD 88.0, AUTOCORR1 −0.002.</p>", "n": 78}, {"stage": "Software Checks", "title": "Send Checkpoint 2", "parts": [], "probes": [], "html": "<p>In one message: the readings from Power On and Measure (just list any that were off), and the full output of the four commands. Then we make the key.</p>", "n": 79}];
+const NOTES = {"Flat Parts, Top to Bottom": "Resistors and the small ceramic capacitors go in first because they lie low. Every one runs straight down one column.", "The Chip and the Transistor": "These stand taller, so they go in after the flat parts.", "Electrolytic Capacitors": "Each one stands upright in two neighbouring holes. Long leg is plus (+); the stripe on the can marks the minus leg.", "Short Wires on the Board": "Colours are suggestions. Black for every ground wire keeps the photo easy to check.", "Boost Module Wires": "The MT3608 sits off the board on its four wires. Its VOUT+ goes to row 31, and R16 and R17 halve it for row 27.", "DevEBox Wires": "The DevEBox stays unplugged. Its pin names are printed on the underside.", "Check with the Power Off": "Everything unplugged. Push a jumper pin into a free hole of the named row and touch the probe to it. A short chirp that stops at once is a capacitor charging and counts as no beep.", "Power On and Measure": "Plug the USB-C cable into the DevEBox. The CP2102 stays on PA9, PA10 and GND for the serial link, with its 5V wire out. Take each measuring jumper out again afterwards: a loose wire left in rows 16 to 19 picks up hum.", "Software Checks": "Close the Zirah app first so the serial port is free."};
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const placedAt = {};
+  STEPS.forEach((s, i) => s.parts.forEach((p) => { placedAt[p] = i; }));
+  let cur = 0;
+  try {
+    const v = parseInt(localStorage.getItem("zirah-board-a-step"), 10);
+    if (!isNaN(v) && v >= 0 && v < STEPS.length) cur = v;
+  } catch (e) { /* storage unavailable: start at step 1 */ }
+
+  const list = $("list");
+  let out = "", stage = null;
+  STEPS.forEach((s, i) => {
+    if (s.stage !== stage) {
+      if (stage !== null) out += "</ol></div>";
+      stage = s.stage;
+      out += '<div class="grp"><h3>' + s.stage + "</h3><ol>";
+    }
+    out += '<li><button type="button" data-i="' + i + '"><span class="n">' + s.n +
+      '</span><span class="t">' + s.title + "</span></button></li>";
+  });
+  list.innerHTML = out + "</ol></div>";
+  const items = list.querySelectorAll("button[data-i]");
+  const groups = document.querySelectorAll("#board .part");
+  const probes = $("probes");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function go(i, fromList) {
+    cur = Math.max(0, Math.min(STEPS.length - 1, i));
+    const s = STEPS[cur];
+    $("count").textContent = "Step " + s.n + " of " + STEPS.length;
+    $("stage").textContent = s.stage;
+    $("title").textContent = s.title;
+    const note = NOTES[s.stage] || "";
+    $("note").textContent = note;
+    $("note").hidden = !note;
+    $("body").innerHTML = s.html;
+    groups.forEach((g) => {
+      const at = placedAt[g.dataset.part];
+      g.classList.toggle("later", at > cur);
+      g.classList.toggle("now", at === cur);
+      g.classList.toggle("placed", at < cur);
+    });
+    probes.textContent = "";
+    s.probes.forEach((p) => {
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", p.at[0]); c.setAttribute("cy", p.at[1]); c.setAttribute("r", 7);
+      c.setAttribute("class", "probe"); c.setAttribute("fill", p.c === "red" ? "#d32f2f" : "#111111");
+      probes.appendChild(c);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("x", p.at[0] + 10); t.setAttribute("y", p.at[1] - 8);
+      t.setAttribute("class", "probet"); t.textContent = p.c === "red" ? "red probe" : "black probe";
+      probes.appendChild(t);
+    });
+    $("prev").disabled = cur === 0;
+    $("next").disabled = cur === STEPS.length - 1;
+    $("barfill").style.width = ((cur + 1) / STEPS.length) * 100 + "%";
+    items.forEach((b) => {
+      const k = +b.dataset.i;
+      b.classList.toggle("cur", k === cur);
+      b.classList.toggle("done", k < cur);
+      if (k === cur) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+    });
+    const wrap = document.querySelector(".drawing");
+    if (wrap.scrollWidth > wrap.clientWidth + 2) {
+      const g = document.querySelector("#board .part.now");
+      let cx;
+      if (g) { const bb = g.getBBox(); cx = bb.x + bb.width / 2; }
+      else if (s.probes.length) cx = s.probes[0].at[0];
+      if (cx !== undefined) {
+        const svg = $("board");
+        wrap.scrollLeft = cx * (svg.clientWidth / svg.viewBox.baseVal.width) - wrap.clientWidth / 2;
+      }
+    }
+    try { localStorage.setItem("zirah-board-a-step", String(cur)); } catch (e) { /* not saved */ }
+    if (fromList) {
+      const card = document.querySelector(".now");
+      if (card.getBoundingClientRect().top < 0) card.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
+    }
+  }
+  list.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-i]");
+    if (b) go(+b.dataset.i, true);
+  });
+  $("prev").addEventListener("click", () => go(cur - 1));
+  $("next").addEventListener("click", () => go(cur + 1));
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest && e.target.closest("input, textarea, select")) return;
+    if (e.key === "ArrowRight") go(cur + 1);
+    if (e.key === "ArrowLeft") go(cur - 1);
+  });
+  go(cur);
+})();
+
+</script>

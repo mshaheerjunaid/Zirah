@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Zirah: A Post-Quantum Hardware Signer with an Avalanche Noise True Random Number Generator"
+type: software
+authors:
+  - family-names: "Junaid"
+    given-names: "Muhammad Shaheer Bin"
+    orcid: "https://orcid.org/0009-0002-4088-6232"
+version: "1.0.0"
+date-released: "2026-11-05"
+license: MIT
+keywords:
+  - hardware security
+  - embedded security
+  - post-quantum cryptography
+  - ML-DSA
+  - FIPS 204
+  - masking
+  - shuffling
+  - side-channel analysis
+  - TVLA
+  - ELMO
+  - true random number generator
+  - SP 800-90B
+  - ATECC608
+  - STM32
